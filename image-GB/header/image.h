@@ -1,4 +1,5 @@
 #include "../header/stb_image.h"
+#include "../header/stb_image_write.h"
 #include <iostream>
 #include <vector>
 
@@ -38,12 +39,20 @@ class Image{
 
     public:
         static Image createImage(char * filepath);
+        static void writeImage(Image image, char * filepath);
+
         int getWidth();
         int getHeight();
+        int getChannels();
         int getDataLenght();
 
         void addPixel(Pixel pixel){
             this->pixels.push_back(pixel);
         }
+
+        void modifyDataFromPixels();
+
+        void modifyImage();
+
 };
 

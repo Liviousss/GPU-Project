@@ -1,17 +1,23 @@
 #define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../header/image.h"
 #include <iostream>
 
 
 int main(){
     
-    char filepath[] = "/home/livio/Scrivania/GPU Project/GPU-Project/image-GB/images/4k_image.jpg";
+    char filepath[] = "./images/4k_image.jpg";
 
     Image image = Image::createImage(filepath);
 
-    int dim = image.getDataLenght();
+    int channels = image.getChannels();
     
-    std::cout << "dimesione : " << dim;
+    std::cout << "channels : " << channels;
     int a = 10;
+
+    image.modifyImage();
+
+    char outputFilePath[] = "./images/4k_image_modified.jpg";
+    Image::writeImage(image,outputFilePath);
 
 }
