@@ -40,3 +40,7 @@ clean:
 # Create the necessary directories if they don't exist
 $(OBJ_DIR) $(BIN_DIR):
 	mkdir -p $@
+
+# run rule
+run:
+	./${BIN_DIR}/my_program
