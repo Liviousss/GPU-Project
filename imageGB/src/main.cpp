@@ -26,6 +26,8 @@ int main(){
 
     char outputFilePath[] = "../images/4k_image_modified_1.jpg";
     Image::writeImage(blurred_image,outputFilePath);
+
+    
     
 
 }
