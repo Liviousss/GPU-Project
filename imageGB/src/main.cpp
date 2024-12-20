@@ -5,29 +5,42 @@
 #include <iostream>
 
 
+void imageAnalisys4k(void);
+void ImageAnalisys720(void);
+
 int main(){
+    ImageAnalisys720();
     
+
+
+}
+
+void imageAnalisys4k(void)
+{   
     char filepath[] = "../images/4k_image.jpg";
 
     Image image = Image::loadImage(filepath);
-
-    int channels = image.getChannels();
-    
-    std::cout << "channels : " << channels;
-    int a = 10;
-
-    //image.modifyImage();
-
-    
 
     GaussianBlur GB = GaussianBlur();
 
     Image blurred_image = GB.blurImage(image);
 
-    char outputFilePath[] = "../images/4k_image_modified_1.jpg";
+    char outputFilePath[] = "../images/4k_basic_struct_image_copy.jpg";
     Image::writeImage(blurred_image,outputFilePath);
 
-    
-    
+}
+
+void ImageAnalisys720(void)
+{
+    char filepath[] = "../images/720p_image.jpg";
+
+    Image image = Image::loadImage(filepath);
+
+    GaussianBlur GB = GaussianBlur();
+
+    Image blurred_image = GB.blurImage(image);
+
+    char outputFilePath[] = "../images/720p_image_blurred.jpg";
+    Image::writeImage(blurred_image,outputFilePath);
 
 }

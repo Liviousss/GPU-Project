@@ -1,7 +1,6 @@
 #include "../header/image.h"
 
 
-
 Image Image::loadImage(char *filepath)
 {
     int width, height, channels;
@@ -14,21 +13,28 @@ Image Image::loadImage(char *filepath)
         std::cout << "ok";
     }
 
-    Image image = Image(width,height,channels,image_data);
-    int dim = width * height * channels;
-    for(int i=0; i<dim; i=i+3){
-        image.addPixel(Pixel(image_data[i],image_data[i+1],image_data[i+2]));
-    }
+    int zero_values = 0;
+    for(int i=0; i<width * height * channels; i++)
+        if(image_data[i]==0)
+            zero_values++;
 
-    image.generatePixelMatrix();
+    std::cout<< "zeros " << zero_values <<std::endl;
+    
+    Image image = Image(width,height,channels,image_data);
 
     return image;
 }
 
 void Image::writeImage(Image image, char *filepath)
 {
-    image.modifyDataFromPixels();
-    stbi_write_jpg(filepath,image.width,image.height,image.channels,image.data,image.width*image.channels);
+
+    int result = stbi_write_jpg(filepath,image.width,image.height,image.channels,image.data,image.width*image.channels);
+    if (result==0){
+        std::cout << "null ptr";
+    }
+    else{
+        std::cout << "ok";
+    }
 }
 
 
@@ -43,28 +49,7 @@ Image Image::createEmptyImage(int width, int height, int channels)
 
     Image emptyImage = Image(width,height,channels,data);
 
-    for(int i=0; i<dim; i=i+3){
-        emptyImage.addPixel(Pixel(0,0,0));
-    }
-    emptyImage.generatePixelMatrix();
-
     return emptyImage;
-}
-
-void Image::generatePixelMatrix(){
-    std::vector<std::vector<Pixel>> vec;
-    for(int i=0; i<pixels.size(); i++){
-        int y = (int)(i / this->height);
-        int x = i % this->width;
-        
-        if(y==vec.size()){
-            std::vector<Pixel> row;
-            vec.push_back(row);
-        }
-        vec[y].push_back(this->pixels[i]);
-    }
-
-    this->pixelMatrix = vec;
 }
 
 
@@ -83,32 +68,24 @@ int Image::getChannels()
 }
 int Image::getDataLenght()
 {
-    return (this->pixels).size();
+    return this->channels * this->width * this->height;
 }
 unsigned char *Image::getData()
 {
     return this->data;
 }
-
-std::vector<std::vector<Pixel>> Image::getPixelMatrix(){
-    return this->pixelMatrix;
-}
-
-void Image::modifyDataFromPixels()
+unsigned char Image::getValueAt(int column, int row)
 {
-    int dim = this->width * this->height * this->channels;
-    for(int i=0,j=0;i<dim;i=i+3,j=j+1){
-        this->data[i] = this->pixels[j].R;
-        this->data[i+1] = this->pixels[j].G;
-        this->data[i+2] = this->pixels[j].B;
-    }
-}
-void Image::modifyImage()
-{
+    
+    int y = row * width * channels;
+    int x = column * channels;
 
-    for(Pixel p : this->pixels){
-        p.R=50;
-        p.G=50;
-        p.B=50;
-    }
+    return this->data[y+x];
+}
+unsigned char Image::getPosition(int row, int column)
+{
+    int y = row * width * channels;
+    int x = column * channels;
+
+    return x+y;
 }
