@@ -24,23 +24,10 @@ void GaussianBlur::generateGaussianMatrix(){
         }
     }
 
-    for(int i=0; i<kernel_size; i++){
-        for(int j=0; j<kernel_size; j++){
-            std::cout << gaussianMatrix[i][j] << std::endl;
-        }
-    }
-
-    std::cout << "-------------------------" << std::endl;
     //normalizzazione
     for(int i=0; i<kernel_size; i++){
         for(int j=0; j<kernel_size; j++){
             gaussianMatrix[i][j] /= sum;
-        }
-    }
-
-    for(int i=0; i<kernel_size; i++){
-        for(int j=0; j<kernel_size; j++){
-            std::cout << gaussianMatrix[i][j] << std::endl;
         }
     }
 
@@ -104,9 +91,32 @@ Image GaussianBlur::blurImage(Image image)
         if(blurredImageData[i]==0)
             zero_values++;
 
-    std::cout<< "zeros " << zero_values <<std::endl;
-
     Image blurredImage = Image(image.getWidth(), image.getHeight(), image.getChannels(), blurredImageData);
 
+    return blurredImage;
+}
+
+Image GaussianBlur::blurImageGPU(Image image)
+{
+    int DIM = image.getDataLenght();
+    unsigned char *blurredImageData = (unsigned char *)malloc(image.getDataLenght() * sizeof(unsigned char));
+    float *gaussianKernel = (float *)malloc(kernel_size*kernel_size*sizeof(float));
+
+    for(int i=0;i<kernel_size*kernel_size;i++){
+        gaussianKernel[i] = gaussianMatrix[i/kernel_size][i%kernel_size];
+    }
+
+    kernel(image.getData(),
+            blurredImageData,
+            gaussianKernel,
+            image.getDataLenght(),
+            this->kernel_size,
+            image.getWidth(),
+            image.getHeight(),
+            image.getChannels());
+    
+    cudaDeviceSynchronize();
+
+    Image blurredImage = Image(image.getWidth(), image.getHeight(), image.getChannels(), blurredImageData);
     return blurredImage;
 }

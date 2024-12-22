@@ -3,6 +3,7 @@
 #include <math.h>
 #include <vector>
 #include "image.h"
+#include "cuda_kernel.cuh"
 
 
 
@@ -32,6 +33,8 @@ class GaussianBlur{
         }
 
         Image blurImage(Image image);
+
+        Image blurImageGPU(Image image);
 
 
 

@@ -7,18 +7,12 @@ Image Image::loadImage(char *filepath)
     unsigned char * image_data = stbi_load(filepath,&width,&height,&channels,0);
 
     if (image_data==nullptr){
-        std::cout << "null ptr";
+        std::cout << "Image not loaded\n";
     }
     else{
-        std::cout << "ok";
+        std::cout << "Image loaded\n";
     }
 
-    int zero_values = 0;
-    for(int i=0; i<width * height * channels; i++)
-        if(image_data[i]==0)
-            zero_values++;
-
-    std::cout<< "zeros " << zero_values <<std::endl;
     
     Image image = Image(width,height,channels,image_data);
 
@@ -30,10 +24,10 @@ void Image::writeImage(Image image, char *filepath)
 
     int result = stbi_write_jpg(filepath,image.width,image.height,image.channels,image.data,image.width*image.channels);
     if (result==0){
-        std::cout << "null ptr";
+        std::cout << "Image not written\n";
     }
     else{
-        std::cout << "ok";
+        std::cout << "Image written\n";
     }
 }
 
@@ -68,7 +62,7 @@ int Image::getChannels()
 }
 int Image::getDataLenght()
 {
-    return this->channels * this->width * this->height;
+    return channels * width * height;
 }
 unsigned char *Image::getData()
 {
