@@ -1,29 +1,29 @@
 #include "../header/cuda_kernel.cuh"
 
+__global__ void helloFromGPU (void) {
+    printf("Hello World from Jetson GPU!\n");
+}
+
+
 __global__ void blurImage(unsigned char *image,unsigned char *blurred_image,float *gaussianMatrix,int kernel_size, int imageRows, int imageColumns, int imageChannels){
     
-    printf("qui arrivo 1");
+    
 
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
     float value = 0.0f;
-    int channels = 3;
     int half_kernel_size = kernel_size/2;
     int DIM = imageChannels*imageRows*imageColumns;
 
-    printf("qui arrivo 2");
-
     if(idx>=DIM) return;
 
-    printf("qui arrivo");
 
     float blurred_value = 0.0;
 
-    for(int m=-kernel_size; m<=kernel_size;m++){
-        for(int n=-kernel_size; n<=kernel_size;n++){
-            int toAddIdx = m*imageColumns*imageChannels + n*channels;
-            if ( ! (idx+toAddIdx >= DIM || idx+toAddIdx < 0)){
-
+    for(int m=-half_kernel_size; m<=half_kernel_size;m++){
+        for(int n=-half_kernel_size; n<=half_kernel_size;n++){
+            int toAddIdx = (m*imageColumns + n)*imageChannels;
+            if ( ! (idx+toAddIdx >= DIM || idx+toAddIdx < 0)){              
                 unsigned char value = image[idx+toAddIdx];
                 float gaussianValue = gaussianMatrix[(m+half_kernel_size)*kernel_size + (n+half_kernel_size)];
                 float valueXblur = value * gaussianValue;
@@ -33,8 +33,8 @@ __global__ void blurImage(unsigned char *image,unsigned char *blurred_image,floa
         }
     }
     
-    int intValue = static_cast<int>(blurred_value);
-    unsigned char unsignedCharValue = static_cast<unsigned char>(intValue);
+    int intValue = (int)(blurred_value);
+    unsigned char unsignedCharValue = (unsigned char)intValue;
     blurred_image[idx] = unsignedCharValue;
     
 }
@@ -51,6 +51,8 @@ void kernel(unsigned char *image, unsigned char* blurred_image, float *gaussianF
     cudaMalloc((void **)&device_image,size);
     cudaMemcpy(device_image,image,size,cudaMemcpyHostToDevice);
 
+    cudaMalloc((void **)&device_blurred_image,size);
+
     //GAUSSIAN FUNCTION
 
     cudaMalloc((void **)&device_gaussianFunction,kernel_size * kernel_size * sizeof(float));
@@ -61,12 +63,23 @@ void kernel(unsigned char *image, unsigned char* blurred_image, float *gaussianF
     int threadXblock = 1024;
     int blocksPerGrid = (DIM + threadXblock - 1) / threadXblock;
 
-    blurImage <<<1,1>>>(device_image,device_blurred_image,device_gaussianFunction,kernel_size,rows,columns,channels);
+    blurImage <<<blocksPerGrid,threadXblock>>>(device_image,device_blurred_image,device_gaussianFunction,kernel_size,rows,columns,channels);
 
     cudaDeviceSynchronize();
 
     cudaMemcpy(blurred_image,device_blurred_image,size,cudaMemcpyDeviceToHost);
+    
 
     cudaDeviceSynchronize();
+};
+
+void testGPU(){
+    printf("Hello World from CPU!\n");
+    helloFromGPU <<<1, 10>>>();
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        printf("CUDA Kernel Launch Error: %s\n", cudaGetErrorString(err));
+    }
+    cudaDeviceReset();
 
 }

@@ -111,8 +111,8 @@ Image GaussianBlur::blurImageGPU(Image image)
             gaussianKernel,
             image.getDataLenght(),
             this->kernel_size,
-            image.getWidth(),
             image.getHeight(),
+            image.getWidth(),
             image.getChannels());
     
     cudaDeviceSynchronize();

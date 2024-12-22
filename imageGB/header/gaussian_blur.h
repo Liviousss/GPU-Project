@@ -11,7 +11,7 @@ class GaussianBlur{
     private:
 
         const int DEFAULT_KERNEL_SIZE = 7;
-        const int DEFAULT_STD_DEV = 3;
+        const int DEFAULT_STD_DEV = 10;
 
         int kernel_size;
         int std_dev;
