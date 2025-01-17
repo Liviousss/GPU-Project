@@ -36,7 +36,7 @@ void GaussianBlur::generateGaussianMatrix(){
 };
 
 
-Image GaussianBlur::blurImage(Image image)
+Image GaussianBlur::blurImage(Image image, int* duration)
 {
     
     int rows = image.getHeight();
@@ -45,6 +45,9 @@ Image GaussianBlur::blurImage(Image image)
     int channels = image.getChannels();
 
     unsigned char *blurredImageData = (unsigned char*)malloc(image.getDataLenght() * sizeof(unsigned char));
+
+    time_t start = 0;
+    time(&start);
 
     for(int i=0; i<rows;i++){
         for(int j=0; j<columns;j++){
@@ -55,7 +58,6 @@ Image GaussianBlur::blurImage(Image image)
                 for(int m=-this->half_kernel_size; m<=this->half_kernel_size;m++){
                     for(int n=-this->half_kernel_size; n<=this->half_kernel_size;n++){
                         if ( ! (i+m >= rows || i+m < 0 || j+n+c>=columns || j+n < 0)){
-                            //float value = image.getValueAt(j+n,i+m);
                             unsigned char value = (image.getData())[((i+m)*columns + (j+n)) * channels + c];
                             float gaussianValue = this->gaussianMatrix[m+half_kernel_size][n+half_kernel_size];
                             float valueXblur = value * gaussianValue;
@@ -65,16 +67,10 @@ Image GaussianBlur::blurImage(Image image)
                     }
                 }
                 
-                //int position = image.getPosition(i,j);
-                // printf("Blurredvalue as float: %.2f",blurred_value);
                 int intValue = static_cast<int>(blurred_value);
                 unsigned char unsignedCharValue = static_cast<unsigned char>(intValue);
-
-                //std::cout << "UC value : "<< unsignedCharValue << "suca" << std::endl;
-                //int position = (i*columns + j) * channels;
                 int position = (i*columns + j) * channels + c;
                 blurredImageData[position] = unsignedCharValue;
-                //std::cout << "position : "<< position << "suca" << std::endl;
             }
 
             
@@ -82,21 +78,18 @@ Image GaussianBlur::blurImage(Image image)
         }
     }
 
-    // for(int i=0; i< 10000; i++){
-    //     std::cout << blurredImageData[i] << std::endl;
-    // }
-
-    int zero_values = 0;
-    for(int i=0; i<image.getDataLenght(); i++)
-        if(blurredImageData[i]==0)
-            zero_values++;
+    time_t stop = 0;
+    time(&stop);
 
     Image blurredImage = Image(image.getWidth(), image.getHeight(), image.getChannels(), blurredImageData);
+
+    int timeElapsed = difftime(stop,start);
+    *duration = timeElapsed;
 
     return blurredImage;
 }
 
-Image GaussianBlur::blurImageGPU(Image image)
+Image GaussianBlur::blurImageGPU(Image image, int* dataTransferTime,int* computationTime)
 {
     int DIM = image.getDataLenght();
     unsigned char *blurredImageData = (unsigned char *)malloc(image.getDataLenght() * sizeof(unsigned char));
@@ -113,7 +106,9 @@ Image GaussianBlur::blurImageGPU(Image image)
             this->kernel_size,
             image.getHeight(),
             image.getWidth(),
-            image.getChannels());
+            image.getChannels(),
+            dataTransferTime,
+            computationTime);
     
     cudaDeviceSynchronize();
 

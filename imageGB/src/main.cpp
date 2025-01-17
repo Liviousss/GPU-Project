@@ -3,49 +3,39 @@
 #include <iostream>
 
 
-void imageAnalisys4k(void);
-void ImageAnalisys720(void);
+
+void imageAnalisys(char* inputFilePath, char* outputFilePathCPU,char* outputFilePathGPU);
 
 int main(){
-    ImageAnalisys720();
     
-    imageAnalisys4k();
+    imageAnalisys("./images/720p_image.jpg","./images/720p_blurred_image_CPU.jpg","./images/720p_blurred_image_GPU.jpg");
+    imageAnalisys("./images/1080p_image.jpg","./images/1080p_blurred_image_CPU.jpg","./images/1080p_blurred_image_GPU.jpg");
+    imageAnalisys("./images/2k_image.jpg","./images/2k_blurred_image_CPU.jpg","./images/2k_blurred_image_GPU.jpg");
+    imageAnalisys("./images/4k_image.jpg","./images/4k_blurred_image_CPU.jpg","./images/4k_blurred_image_GPU.jpg");
 
 }
 
-void imageAnalisys4k(void)
-{   
-    char filepath[] = "./images/4k_image.jpg";
+void imageAnalisys(char* inputFilePath, char* outputFilePathCPU, char* outputFilePathGPU){
+    
+    printf("-------------------\n");
 
-    Image image = Image::loadImage(filepath);
+    Image image = Image::loadImage(inputFilePath);
 
     GaussianBlur GB = GaussianBlur();
 
-    Image blurred_image = GB.blurImage(image);
-    char outputFilePath[] = "./images/4k_blurred_image_CPU.jpg";
-    Image::writeImage(blurred_image,outputFilePath);
+    int durataCPU;
+    Image blurred_image = GB.blurImage(image,&durataCPU);
+    Image::writeImage(blurred_image,outputFilePathCPU);
 
-
-    Image blurred_image_GPU = GB.blurImageGPU(image);
-    char outputFilePathGPU[] = "./images/4k_blurred_image_GPU.jpg";
+    int dataTransferTimeGPU;
+    int computationTimeGPU;
+    Image blurred_image_GPU = GB.blurImageGPU(image,&dataTransferTimeGPU,&computationTimeGPU);
     Image::writeImage(blurred_image_GPU,outputFilePathGPU);
 
+    printf("Durata CPU = %d\n",durataCPU);
+    printf("Durata transferTime GPU = %d\n",dataTransferTimeGPU);
+    printf("Durata computationTime GPU = %d millisecondi\n",computationTimeGPU);
+
+    printf("-------------------\n");
 }
 
-void ImageAnalisys720(void)
-{
-    char filepath[] = "./images/720p_image.jpg";
-
-    Image image = Image::loadImage(filepath);
-
-    GaussianBlur GB = GaussianBlur();
-
-    Image blurred_image = GB.blurImage(image);
-    char outputFilePath[] = "./images/720p_image_blurred.jpg";
-    Image::writeImage(blurred_image,outputFilePath);
-
-    Image blurred_image_GPU = GB.blurImageGPU(image);
-    char outputFilePathGPU[] = "./images/720p_image_blurred_GPU.jpg";
-    Image::writeImage(blurred_image_GPU,outputFilePathGPU);
-
-}
