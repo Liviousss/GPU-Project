@@ -55,7 +55,6 @@ Image GaussianBlur::blurImage(Image image)
                 for(int m=-this->half_kernel_size; m<=this->half_kernel_size;m++){
                     for(int n=-this->half_kernel_size; n<=this->half_kernel_size;n++){
                         if ( ! (i+m >= rows || i+m < 0 || j+n+c>=columns || j+n < 0)){
-                            //float value = image.getValueAt(j+n,i+m);
                             unsigned char value = (image.getData())[((i+m)*columns + (j+n)) * channels + c];
                             float gaussianValue = this->gaussianMatrix[m+half_kernel_size][n+half_kernel_size];
                             float valueXblur = value * gaussianValue;
@@ -65,31 +64,16 @@ Image GaussianBlur::blurImage(Image image)
                     }
                 }
                 
-                //int position = image.getPosition(i,j);
-                // printf("Blurredvalue as float: %.2f",blurred_value);
                 int intValue = static_cast<int>(blurred_value);
                 unsigned char unsignedCharValue = static_cast<unsigned char>(intValue);
-
-                //std::cout << "UC value : "<< unsignedCharValue << "suca" << std::endl;
-                //int position = (i*columns + j) * channels;
                 int position = (i*columns + j) * channels + c;
                 blurredImageData[position] = unsignedCharValue;
-                //std::cout << "position : "<< position << "suca" << std::endl;
             }
 
             
              
         }
     }
-
-    // for(int i=0; i< 10000; i++){
-    //     std::cout << blurredImageData[i] << std::endl;
-    // }
-
-    int zero_values = 0;
-    for(int i=0; i<image.getDataLenght(); i++)
-        if(blurredImageData[i]==0)
-            zero_values++;
 
     Image blurredImage = Image(image.getWidth(), image.getHeight(), image.getChannels(), blurredImageData);
 
