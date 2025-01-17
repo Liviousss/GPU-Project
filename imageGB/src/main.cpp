@@ -22,7 +22,7 @@ void imageAnalisys4k(void)
     GaussianBlur GB = GaussianBlur();
 
     Image blurred_image = GB.blurImage(image);
-    char outputFilePath[] = "./images/4k_blurred_image_CPU_prova.jpg";
+    char outputFilePath[] = "./images/4k_blurred_image_CPU.jpg";
     Image::writeImage(blurred_image,outputFilePath);
 
 
