@@ -39,12 +39,25 @@ __global__ void blurImage(unsigned char *image,unsigned char *blurred_image,floa
     
 }
 
-void kernel(unsigned char *image, unsigned char* blurred_image, float *gaussianFunction, int DIM, int kernel_size, int rows, int columns, int channels){
+void kernel(unsigned char *image, 
+            unsigned char* blurred_image, 
+            float *gaussianFunction, 
+            int DIM, 
+            int kernel_size, 
+            int rows, 
+            int columns, 
+            int channels,
+            int *dataTransferTime,
+            int *computationTime){
+
     unsigned char *device_image, *device_blurred_image;
     float *device_gaussianFunction;
 
     int size = DIM * sizeof(unsigned char);
     int gaussianSize = kernel_size * sizeof(float);
+
+    time_t startTransferTime;
+    time(&startTransferTime);
 
     //IMAGE
 
@@ -57,18 +70,39 @@ void kernel(unsigned char *image, unsigned char* blurred_image, float *gaussianF
 
     cudaMalloc((void **)&device_gaussianFunction,kernel_size * kernel_size * sizeof(float));
     cudaMemcpy(device_gaussianFunction,gaussianFunction,kernel_size * kernel_size * sizeof(float),cudaMemcpyHostToDevice);
+
+
+    time_t stopTransferTime;
+    time(&stopTransferTime);
+
+    int firstTime = difftime(stopTransferTime,startTransferTime);
      
     //GPU CODE
 
     int threadXblock = 1024;
     int blocksPerGrid = (DIM + threadXblock - 1) / threadXblock;
 
+    cudaEvent_t startComputationTime,stopComputationTime;
+    cudaEventCreate(&startComputationTime);
+    cudaEventCreate(&stopComputationTime);
+
+    cudaEventRecord(startComputationTime,0);
     blurImage <<<blocksPerGrid,threadXblock>>>(device_image,device_blurred_image,device_gaussianFunction,kernel_size,rows,columns,channels);
+    cudaEventRecord(stopComputationTime,0);
 
     cudaDeviceSynchronize();
 
+    time(&startTransferTime);
+
     cudaMemcpy(blurred_image,device_blurred_image,size,cudaMemcpyDeviceToHost);
     
+    time(&stopTransferTime);
+
+    int secondTime = difftime(stopTransferTime,startTransferTime);
+    *dataTransferTime = firstTime + secondTime;
+    float elapsedTime;
+    cudaEventElapsedTime(&elapsedTime,startComputationTime,stopComputationTime);
+    *computationTime = elapsedTime;
 
     cudaDeviceSynchronize();
 };

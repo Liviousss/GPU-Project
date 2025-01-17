@@ -17,15 +17,25 @@ int main(){
 
 void imageAnalisys(char* inputFilePath, char* outputFilePathCPU, char* outputFilePathGPU){
     
+    printf("-------------------\n");
+
     Image image = Image::loadImage(inputFilePath);
 
     GaussianBlur GB = GaussianBlur();
 
-    Image blurred_image = GB.blurImage(image);
+    int durataCPU;
+    Image blurred_image = GB.blurImage(image,&durataCPU);
     Image::writeImage(blurred_image,outputFilePathCPU);
 
-
-    Image blurred_image_GPU = GB.blurImageGPU(image);
+    int dataTransferTimeGPU;
+    int computationTimeGPU;
+    Image blurred_image_GPU = GB.blurImageGPU(image,&dataTransferTimeGPU,&computationTimeGPU);
     Image::writeImage(blurred_image_GPU,outputFilePathGPU);
+
+    printf("Durata CPU = %d\n",durataCPU);
+    printf("Durata transferTime GPU = %d\n",dataTransferTimeGPU);
+    printf("Durata computationTime GPU = %d millisecondi\n",computationTimeGPU);
+
+    printf("-------------------\n");
 }
 

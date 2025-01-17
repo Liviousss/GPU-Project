@@ -32,9 +32,9 @@ class GaussianBlur{
             generateGaussianMatrix();
         }
 
-        Image blurImage(Image image);
+        Image blurImage(Image image, int* duration);
 
-        Image blurImageGPU(Image image);
+        Image blurImageGPU(Image image, int* dataTransferTime,int* computationTime);
 
 
 
