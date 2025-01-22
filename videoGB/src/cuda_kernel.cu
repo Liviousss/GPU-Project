@@ -112,6 +112,8 @@ void kernel(unsigned char *video,
     blurVideo <<<blocksPerGrid,threadXblock>>>(device_video,device_blurred_video,device_gaussianFunction,kernel_size,rows,columns,channels,frames);
     cudaEventRecord(stopComputationTime,0);
 
+    cudaError_t error = cudaGetLastError();
+
     cudaDeviceSynchronize();
 
     time(&startTransferTime);
