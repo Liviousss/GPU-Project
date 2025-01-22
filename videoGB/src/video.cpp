@@ -20,9 +20,11 @@ int Video::getFrames()
     return frames;
 }
 
-int Video::getDataLenght()
+unsigned int Video::getDataLenght()
 {
-    return channels * frames * width * height;
+    unsigned int value = static_cast<unsigned int>(channels) * static_cast<unsigned int>(frames) 
+                        * static_cast<unsigned int>(width) * static_cast<unsigned int>(height);
+    return value;
 }
 
 unsigned char *Video::getData()
