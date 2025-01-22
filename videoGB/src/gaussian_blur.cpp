@@ -37,6 +37,10 @@ void GaussianBlur::generateGaussianMatrix(){
 };
 
 
+/*
+CODE FOR THE CPU IMPLEMENTATION : NOT WORKING
+
+
 Video GaussianBlur::blurVideo(Video video, int* duration)
 {
     
@@ -92,6 +96,7 @@ Video GaussianBlur::blurVideo(Video video, int* duration)
 
     return blurredVideo;
 }
+*/
 
 Video GaussianBlur::blurVideoGPU(Video video, int* dataTransferTime,int* computationTime)
 {

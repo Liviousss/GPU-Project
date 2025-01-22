@@ -32,8 +32,12 @@ class GaussianBlur{
             generateGaussianMatrix();
         }
 
-        Video blurVideo(Video video, int* duration);
+        /*
+        FUNCTION FOR THE CPU IMPLEMENTATION : NOT WORKING
 
+        Video blurVideo(Video video, int* duration);
+        */
+       
         Video blurVideoGPU(Video video, int* dataTransferTime,int* computationTime);
 
 
