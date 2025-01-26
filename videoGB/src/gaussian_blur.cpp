@@ -108,7 +108,7 @@ Video GaussianBlur::blurVideoGPU(Video video, int* dataTransferTime,int* computa
         gaussianKernel[i] = gaussianMatrix[i/kernel_size][i%kernel_size];
     }
 
-    kernel(video.getData(),
+    kernelUsingStreams(video.getData(),
             blurredVideoData,
             gaussianKernel,
             video.getDataLenght(),
