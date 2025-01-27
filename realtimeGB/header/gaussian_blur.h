@@ -2,7 +2,6 @@
 
 #include <math.h>
 #include <vector>
-#include "video.h"
 #include "cuda_kernel.cuh"
 
 
@@ -10,7 +9,7 @@
 class GaussianBlur{
     private:
 
-        const int DEFAULT_KERNEL_SIZE = 7;
+        const int DEFAULT_KERNEL_SIZE = 15;
         const int DEFAULT_STD_DEV = 10;
 
         int kernel_size;
@@ -31,5 +30,7 @@ class GaussianBlur{
             this->half_kernel_size = (int)(this->kernel_size / 2);
             generateGaussianMatrix();
         }
+
+    unsigned char *blurFrame(unsigned char *frame, int width, int height, int channels, int* dataTransferTime,int* computationTime);
         
 };
