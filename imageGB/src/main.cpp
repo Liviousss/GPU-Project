@@ -19,23 +19,43 @@ void imageAnalisys(char* inputFilePath, char* outputFilePathCPU, char* outputFil
     
     printf("-------------------\n");
 
-    Image image = Image::loadImage(inputFilePath);
+    try{
+        //Load the image
+        Image image = Image::loadImage(inputFilePath);
 
-    GaussianBlur GB = GaussianBlur();
+        //Create the Gaussian Blur Filter
+        GaussianBlur GB = GaussianBlur();
 
-    int durataCPU;
-    Image blurred_image = GB.blurImage(image,&durataCPU);
-    Image::writeImage(blurred_image,outputFilePathCPU);
+        //Blur the image using the CPU
+        int durataCPU;
+        Image blurred_image = GB.blurImage(image,&durataCPU);
 
-    int dataTransferTimeGPU;
-    int computationTimeGPU;
-    Image blurred_image_GPU = GB.blurImageGPU(image,&dataTransferTimeGPU,&computationTimeGPU);
-    Image::writeImage(blurred_image_GPU,outputFilePathGPU);
+        //Blur the image using the GPU
+        int dataTransferTimeGPU;
+        int computationTimeGPU;
+        Image blurred_image_GPU = GB.blurImageGPU(image,&dataTransferTimeGPU,&computationTimeGPU);
 
-    printf("Durata CPU = %d\n",durataCPU);
-    printf("Durata transferTime GPU = %d\n",dataTransferTimeGPU);
-    printf("Durata computationTime GPU = %d millisecondi\n",computationTimeGPU);
+        //Try write the blurred images
+        try{
+            Image::writeImage(blurred_image,outputFilePathCPU);
+            Image::writeImage(blurred_image_GPU,outputFilePathGPU);
+        }
+        catch(std::exception &e){
+            std::cout << "Image not writed correctly" << std::endl;
+            return;
+        };
 
-    printf("-------------------\n");
+        printf("Durata CPU = %d\n",durataCPU);
+        printf("Durata transferTime GPU = %d\n",dataTransferTimeGPU);
+        printf("Durata computationTime GPU = %d millisecondi\n",computationTimeGPU);
+
+        printf("-------------------\n");
+
+    }catch(std::exception &exception){
+        std::cout << "Image not loaded correctly, wrong input file path: "<< inputFilePath << std::endl;
+        return;
+    };
+
+    
 }
 

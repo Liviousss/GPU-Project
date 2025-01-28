@@ -12,22 +12,21 @@ float gaussianFunction(int x, int y, int std_dev){
 
 
 void GaussianBlur::generateGaussianMatrix(){
-    float ** gaussianMatrix = (float **)malloc(kernel_size * sizeof(float *));
+    float * gaussianMatrix = (float *)malloc(kernel_size * kernel_size * sizeof(float *));
     float sum = 0.0f;
 
     for(int i=0; i<kernel_size; i++){
-        gaussianMatrix[i] = (float *)malloc(kernel_size * sizeof(float));
         for(int j=0; j<kernel_size; j++){
             float value = gaussianFunction(i,j,std_dev);
-            gaussianMatrix[i][j] = value;
+            gaussianMatrix[i*kernel_size + j] = value;
             sum += value;
         }
     }
 
-    //normalizzazione
+    //normalization
     for(int i=0; i<kernel_size; i++){
         for(int j=0; j<kernel_size; j++){
-            gaussianMatrix[i][j] /= sum;
+            gaussianMatrix[i*kernel_size + j] /= sum;
         }
     }
 
@@ -59,7 +58,8 @@ Image GaussianBlur::blurImage(Image image, int* duration)
                     for(int n=-this->half_kernel_size; n<=this->half_kernel_size;n++){
                         if ( ! (i+m >= rows || i+m < 0 || j+n+c>=columns || j+n < 0)){
                             unsigned char value = (image.getData())[((i+m)*columns + (j+n)) * channels + c];
-                            float gaussianValue = this->gaussianMatrix[m+half_kernel_size][n+half_kernel_size];
+                            int pos = (m+half_kernel_size) * kernel_size + n+half_kernel_size;
+                            float gaussianValue = this->gaussianMatrix[pos];
                             float valueXblur = value * gaussianValue;
                             blurred_value += valueXblur;
                         }
@@ -93,15 +93,11 @@ Image GaussianBlur::blurImageGPU(Image image, int* dataTransferTime,int* computa
 {
     int DIM = image.getDataLenght();
     unsigned char *blurredImageData = (unsigned char *)malloc(image.getDataLenght() * sizeof(unsigned char));
-    float *gaussianKernel = (float *)malloc(kernel_size*kernel_size*sizeof(float));
-
-    for(int i=0;i<kernel_size*kernel_size;i++){
-        gaussianKernel[i] = gaussianMatrix[i/kernel_size][i%kernel_size];
-    }
+    
 
     kernel(image.getData(),
             blurredImageData,
-            gaussianKernel,
+            gaussianMatrix,
             image.getDataLenght(),
             this->kernel_size,
             image.getHeight(),

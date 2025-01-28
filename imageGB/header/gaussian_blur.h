@@ -18,7 +18,7 @@ class GaussianBlur{
 
         int half_kernel_size;
 
-        float **gaussianMatrix;
+        float *gaussianMatrix;
 
         void generateGaussianMatrix();
 
@@ -32,8 +32,19 @@ class GaussianBlur{
             generateGaussianMatrix();
         }
 
+        /**
+         * Blur the image using the CPU.
+         * @param image An Image object.
+         * @param duration Pointer to the function computation time. 
+        */
         Image blurImage(Image image, int* duration);
 
+        /**
+         * Blur the image using the GPU.
+         * @param image An Image object.
+         * @param dataTransferTime Pointer to the data transfer time time CPU-GPU and viceversa.
+         * @param computationTime Pointer to the GPU computation time. 
+        */
         Image blurImageGPU(Image image, int* dataTransferTime,int* computationTime);
 
 

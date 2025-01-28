@@ -20,9 +20,20 @@ class Image{
 
 
     public:
+        /**
+         * Load an image and return an Image object.
+         * @param filepath image path.
+         * @throw runtime exception if the image isn't loaded correctly
+        */
         static Image loadImage(char * filepath);
+
+        /**
+         * Write an image.
+         * @param image Image object.
+         * @param filepath output image path.
+         * @throw runtime exception if the image isn't writed correctly.
+        */
         static void writeImage(Image image, char * filepath);
-        static Image createEmptyImage(int width, int height,int channels);
 
         Image(int width, int height,int channels,unsigned char* data){
             this->width = width;
@@ -36,9 +47,6 @@ class Image{
         int getChannels();
         int getDataLenght();
         unsigned char *getData();
-
-        unsigned char getValueAt(int row, int column);
-        unsigned char getPosition(int row, int column);
         
 };
 

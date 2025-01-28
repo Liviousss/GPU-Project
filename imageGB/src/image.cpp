@@ -6,14 +6,13 @@ Image Image::loadImage(char *filepath)
     int width, height, channels;
     unsigned char * image_data = stbi_load(filepath,&width,&height,&channels,0);
 
+    //check if the image is loaded correctly
     if (image_data==nullptr){
-        std::cout << "Image not loaded\n";
-    }
-    else{
-        std::cout << "Image loaded\n";
+        throw std::runtime_error("Image path invalid");
     }
 
-    
+    //image load correctly
+    std::cout << "Image loaded\n";
     Image image = Image(width,height,channels,image_data);
 
     return image;
@@ -22,28 +21,14 @@ Image Image::loadImage(char *filepath)
 void Image::writeImage(Image image, char *filepath)
 {
 
+    //write the image
     int result = stbi_write_jpg(filepath,image.width,image.height,image.channels,image.data,image.width*image.channels);
     if (result==0){
-        std::cout << "Image not written\n";
-    }
-    else{
-        std::cout << "Image written\n";
-    }
-}
-
-
-Image Image::createEmptyImage(int width, int height, int channels)
-{
-    int dim = width * height * channels;
-    unsigned char *data = (unsigned char *)malloc(dim * sizeof(unsigned char));
-
-    for(int i=0; i<dim ; i++){
-        data[i] = 0;
+        throw std::runtime_error("Image not written correctly");
     }
 
-    Image emptyImage = Image(width,height,channels,data);
-
-    return emptyImage;
+    std::cout << "Image written\n";
+    
 }
 
 
@@ -67,19 +52,4 @@ int Image::getDataLenght()
 unsigned char *Image::getData()
 {
     return this->data;
-}
-unsigned char Image::getValueAt(int column, int row)
-{
-    
-    int y = row * width * channels;
-    int x = column * channels;
-
-    return this->data[y+x];
-}
-unsigned char Image::getPosition(int row, int column)
-{
-    int y = row * width * channels;
-    int x = column * channels;
-
-    return x+y;
 }
