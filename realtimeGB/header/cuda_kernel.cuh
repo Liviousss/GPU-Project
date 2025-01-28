@@ -7,28 +7,26 @@
 #include <vector>
 #include <iostream>
 
-void kernel(unsigned char *video, 
-            unsigned char* blurred_video, 
+void kernel(unsigned char *frame, 
+            unsigned char* blurred_frame, 
             float *gaussianFunction, 
             unsigned int DIM, 
             int kernel_size, 
             int rows, 
             int columns, 
             int channels,
-            int frames,
             int *dataTransferTime,
             int *computationTime);
 
 
-void kernelUsingStreams(unsigned char *video, 
-            unsigned char* blurred_video, 
+void kernelUsingStreams(unsigned char *frame, 
+            unsigned char* blurred_frame, 
             float *gaussianFunction, 
             unsigned int DIM, 
             int kernel_size, 
             int rows, 
             int columns, 
             int channels,
-            int frames,
             int *dataTransferTime,
             int *computationTime);
 

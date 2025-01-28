@@ -5,28 +5,12 @@ __global__ void helloFromGPU (void) {
 }
 
 
-__global__ void blurVideo(unsigned char *video,unsigned char *blurred_video,float *gaussianMatrix,int kernel_size, 
-                          int frameRows, int frameColumns, int frameChannels, int videoFrames){
-    
-    
-
+__global__ void blurframe(unsigned char *frame,unsigned char *blurred_frame,float *gaussianMatrix,int kernel_size, int frameRows, int frameColumns, int frameChannels){
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    int frameSize = frameChannels*frameRows*frameColumns;
-
-    int frame = idx / frameSize;
-    int framePosition = idx % frameSize;
-    // int row = framePosition / (frameColumns * frameChannels);
-    // int columnOffset = framePosition % (frameColumns * frameChannels);
-    // int column = columnOffset / frameColumns;
-    // int channel = columnOffset % frameColumns;
-    int row = framePosition / (frameColumns * frameChannels);
-    int column = (framePosition % (frameColumns * frameChannels)) / frameChannels;
-    int channel = framePosition % frameChannels;
-
 
     float value = 0.0f;
     int half_kernel_size = kernel_size/2;
-    int DIM = frameChannels*frameRows*frameColumns*videoFrames;
+    int DIM = frameChannels*frameRows*frameColumns;
 
     if(idx>=DIM) return;
 
@@ -35,48 +19,9 @@ __global__ void blurVideo(unsigned char *video,unsigned char *blurred_video,floa
 
     for(int m=-half_kernel_size; m<=half_kernel_size;m++){
         for(int n=-half_kernel_size; n<=half_kernel_size;n++){
-            int neighborRow = row + m;
-            int neighborColumn = column + n;
-
-            if (neighborRow < 0 || neighborRow >= frameRows || 
-                neighborColumn < 0 || neighborColumn >= frameColumns) {
-                continue;
-            }
-
-            int neighborIdx = ((frame * frameRows + neighborRow) * frameColumns + neighborColumn) * frameChannels + channel;
-
-            // Access pixel value and Gaussian weight
-            unsigned char pixelValue = video[neighborIdx];
-            float gaussianValue = gaussianMatrix[(m + half_kernel_size) * kernel_size + (n + half_kernel_size)];
-
-            // Accumulate blurred value
-            blurred_value += pixelValue * gaussianValue;
-        }
-    }
-    
-    int intValue = (int)(blurred_value);
-    unsigned char unsignedCharValue = (unsigned char)intValue;
-    blurred_video[idx] = unsignedCharValue;
-    
-}
-
-__global__ void blurImage(unsigned char *image,unsigned char *blurred_image,float *gaussianMatrix,int kernel_size, int imageRows, int imageColumns, int imageChannels){
-    int idx = blockDim.x * blockIdx.x + threadIdx.x;
-
-    float value = 0.0f;
-    int half_kernel_size = kernel_size/2;
-    int DIM = imageChannels*imageRows*imageColumns;
-
-    if(idx>=DIM) return;
-
-
-    float blurred_value = 0.0;
-
-    for(int m=-half_kernel_size; m<=half_kernel_size;m++){
-        for(int n=-half_kernel_size; n<=half_kernel_size;n++){
-            int toAddIdx = (m*imageColumns + n)*imageChannels;
+            int toAddIdx = (m*frameColumns + n)*frameChannels;
             if ( ! (idx+toAddIdx >= DIM || idx+toAddIdx < 0)){              
-                unsigned char value = image[idx+toAddIdx];
+                unsigned char value = frame[idx+toAddIdx];
                 float gaussianValue = gaussianMatrix[(m+half_kernel_size)*kernel_size + (n+half_kernel_size)];
                 float valueXblur = value * gaussianValue;
                 blurred_value += valueXblur;
@@ -87,23 +32,22 @@ __global__ void blurImage(unsigned char *image,unsigned char *blurred_image,floa
     
     int intValue = (int)(blurred_value);
     unsigned char unsignedCharValue = (unsigned char)intValue;
-    blurred_image[idx] = unsignedCharValue;
+    blurred_frame[idx] = unsignedCharValue;
     
 }
 
-void kernel(unsigned char *video, 
-            unsigned char* blurred_video, 
+void kernel(unsigned char *frame, 
+            unsigned char* blurred_frame, 
             float *gaussianFunction, 
             unsigned int DIM, 
             int kernel_size, 
             int rows, 
             int columns, 
             int channels,
-            int frames,
             int *dataTransferTime,
             int *computationTime){
 
-    unsigned char *device_video, *device_blurred_video;
+    unsigned char *device_frame, *device_blurred_frame;
     float *device_gaussianFunction;
 
     int size = DIM * sizeof(unsigned char);
@@ -112,12 +56,12 @@ void kernel(unsigned char *video,
     time_t startTransferTime;
     time(&startTransferTime);
 
-    //IMAGE
+    //frame
 
-    cudaMalloc((void **)&device_video,size);
-    cudaMemcpy(device_video,video,size,cudaMemcpyHostToDevice);
+    cudaMalloc((void **)&device_frame,size);
+    cudaMemcpy(device_frame,frame,size,cudaMemcpyHostToDevice);
 
-    cudaMalloc((void **)&device_blurred_video,size);
+    cudaMalloc((void **)&device_blurred_frame,size);
 
     //GAUSSIAN FUNCTION
 
@@ -140,7 +84,7 @@ void kernel(unsigned char *video,
     cudaEventCreate(&stopComputationTime);
 
     cudaEventRecord(startComputationTime,0);
-    blurVideo <<<blocksPerGrid,threadXblock>>>(device_video,device_blurred_video,device_gaussianFunction,kernel_size,rows,columns,channels,frames);
+    blurframe <<<blocksPerGrid,threadXblock>>>(device_frame,device_blurred_frame,device_gaussianFunction,kernel_size,rows,columns,channels);
     cudaEventRecord(stopComputationTime,0);
 
     cudaError_t error = cudaGetLastError();
@@ -149,7 +93,7 @@ void kernel(unsigned char *video,
 
     time(&startTransferTime);
 
-    cudaMemcpy(blurred_video,device_blurred_video,size,cudaMemcpyDeviceToHost);
+    cudaMemcpy(blurred_frame,device_blurred_frame,size,cudaMemcpyDeviceToHost);
     
     time(&stopTransferTime);
 
@@ -162,10 +106,10 @@ void kernel(unsigned char *video,
     cudaDeviceSynchronize();
 };
 
-void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, float *gaussianFunction, unsigned int DIM, 
-                        int kernel_size, int rows, int columns, int channels, int frames, int *dataTransferTime, int *computationTime){
+void kernelUsingStreams(unsigned char *frame, unsigned char *blurred_frame, float *gaussianFunction, unsigned int DIM, 
+                        int kernel_size, int rows, int columns, int channels, int *dataTransferTime, int *computationTime){
 
-    unsigned char *device_video, *device_blurred_video;
+    unsigned char *device_frame, *device_blurred_frame;
     float *device_gaussianFunction;
 
     unsigned int size = DIM * sizeof(unsigned char);
@@ -175,13 +119,13 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
     time(&startTransferTime);
 
     cudaError_t error = cudaGetLastError();
-    //IMAGE
+    //frame
 
-    cudaMalloc((void **)&device_video,size);
+    cudaMalloc((void **)&device_frame,size);
 
-    cudaMemcpy(device_video,video,size,cudaMemcpyHostToDevice);
+    cudaMemcpy(device_frame,frame,size,cudaMemcpyHostToDevice);
 
-    cudaMalloc((void **)&device_blurred_video,size);
+    cudaMalloc((void **)&device_blurred_frame,size);
 
     //GAUSSIAN FUNCTION
 
@@ -195,8 +139,9 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
      
     //GPU CODE    
     //Streams initialization
-    std::vector<cudaStream_t> streams(frames);
-    for(int i=0;i<frames;i++){
+    int n_streams = 10;
+    std::vector<cudaStream_t> streams(n_streams);
+    for(int i=0;i<n_streams;i++){
         cudaError_t error1 = cudaStreamCreate(&streams[i]);
     }
 
@@ -207,18 +152,18 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
 
     int frameSize = channels * rows * columns;
     int threadXblock = 1024;
-    int blocksPerGrid = (DIM/frames + threadXblock - 1) / threadXblock;
+    int blocksPerGrid = (DIM/n_streams + threadXblock - 1) / threadXblock;
 
     cudaEvent_t startComputationTime,stopComputationTime;
     cudaEventCreate(&startComputationTime);
     cudaEventCreate(&stopComputationTime);
 
     cudaEventRecord(startComputationTime,0);
-    for(int i=0;i<frames;i++){
+    for(int i=0;i<n_streams;i++){
         
         int offset = i * frameSize;
-        blurImage <<<blocksPerGrid,threadXblock,0,streams[i]>>>(device_video + offset,
-                                                                device_blurred_video + offset,
+        blurframe <<<blocksPerGrid,threadXblock,0,streams[i]>>>(device_frame + offset,
+                                                                device_blurred_frame + offset,
                                                                 device_gaussianFunction,
                                                                 kernel_size,
                                                                 rows,
@@ -234,7 +179,7 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
     error = cudaGetLastError(); //Error memory allocation
 
     //destroy streams
-    for (int i = 0; i < frames; i++) {
+    for (int i = 0; i < n_streams; i++) {
         cudaStreamDestroy(streams[i]);
     }
 
@@ -244,7 +189,7 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
 
     time(&startTransferTime);
 
-    cudaMemcpy(blurred_video,device_blurred_video,size,cudaMemcpyDeviceToHost);
+    cudaMemcpy(blurred_frame,device_blurred_frame,size,cudaMemcpyDeviceToHost);
     
     time(&stopTransferTime);
 
