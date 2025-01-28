@@ -1,46 +1,55 @@
-# Compiler Setup
-CC = g++
-NVCC = nvcc
-CXXFLAGS = -O3 -Wall
-CUDAFLAGS = -arch=sm_75  # Adjust for your GPU architecture
-LDFLAGS = -lcudart  # Link to CUDA runtime
+# Compiler and paths
+NVCC = /usr/local/cuda/bin/nvcc
+CXX = g++
+CUDA_INCLUDE = /usr/local/cuda/include
+CUDA_LIB = /usr/local/cuda/lib64
 
-# Directory Setup
+# Directories
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 
-# Source and Object Files
-CPP_SOURCES = $(wildcard $(SRC_DIR)/*.cpp)  # All .cpp files in src/
-CU_SOURCE = $(SRC_DIR)/cuda_kernel.cu  # CUDA source file in the src folder
-OBJ_FILES = $(CPP_SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o) $(OBJ_DIR)/kernel.o  # Object files
+# Files
+TARGET = $(BIN_DIR)/my_program
+CU_FILES = $(wildcard $(SRC_DIR)/*.cu)
+CPP_FILES = $(wildcard $(SRC_DIR)/*.cpp)
+OBJ_FILES = $(addprefix $(OBJ_DIR)/, $(notdir $(CPP_FILES:.cpp=.o)) $(notdir $(CU_FILES:.cu=.o)))
 
-# Executable name
-EXEC = $(BIN_DIR)/my_program
+# Flags
+CUDA_ARCH = -arch=sm_75
+CXXFLAGS = -std=c++11 -g -I$(CUDA_INCLUDE)
+NVCCFLAGS = -std=c++11 $(CUDA_ARCH) -g -G -I$(CUDA_INCLUDE)
+LDFLAGS = -L$(CUDA_LIB) -lcudart
 
-# Default target to build the program
-all: $(EXEC)
+# Default target
+.PHONY: all
+all: build
 
-# Compile .cpp files
+# Build target
+.PHONY: build
+build: $(TARGET)
+
+# Compile CUDA files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cu
+	@mkdir -p $(OBJ_DIR)
+	$(NVCC) $(NVCCFLAGS) -c $< -o $@
+
+# Compile C++ files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CC) $(CXXFLAGS) -c $< -o $@
+	@mkdir -p $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Compile .cu file
-$(OBJ_DIR)/kernel.o: $(CU_SOURCE)
-	$(NVCC) -c $(CU_SOURCE) -o $(OBJ_DIR)/kernel.o $(CUDAFLAGS)
+# Link object files into the binary
+$(TARGET): $(OBJ_FILES)
+	@mkdir -p $(BIN_DIR)
+	$(NVCC) $(NVCCFLAGS) $(OBJ_FILES) -o $@ $(LDFLAGS)
 
-# Link object files to create the executable
-$(EXEC): $(OBJ_FILES)
-	$(NVCC) $(OBJ_FILES) -o $(EXEC) $(LDFLAGS)
+# Run the program
+.PHONY: run
+run: $(TARGET)
+	./$(TARGET)
 
-# Clean up build artifacts
+# Clean target
+.PHONY: clean
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(EXEC)
-
-# Create the necessary directories if they don't exist
-$(OBJ_DIR) $(BIN_DIR):
-	mkdir -p $@
-
-# run rule
-run:
-	./${BIN_DIR}/my_program
+	rm -rf $(OBJ_DIR) $(BIN_DIR)
