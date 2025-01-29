@@ -1,19 +1,22 @@
 #include "../header/cuda_kernel.cuh"
 
-__global__ void helloFromGPU (void) {
-    printf("Hello World from Jetson GPU!\n");
-}
 
-
-__global__ void blurImage(unsigned char *image,unsigned char *blurred_image,float *gaussianMatrix,int kernel_size, int imageRows, int imageColumns, int imageChannels){
-    
-    
-
+/**
+ * GPU function for the Gaussian Blur filter
+ * @param image base image in bytes.
+ * @param blurred_image the blurred image in bytes returned by the kernel.
+ * @param gaussianMatrix the gaussian matrix in 1D format.
+ * @param kernel_size the gaussian function kernel size.
+ * @param height the image height.
+ * @param width the image width.
+ * @param channels the image channels.
+*/
+__global__ void blurImage(unsigned char *image,unsigned char *blurred_image,float *gaussianMatrix,int kernel_size, int height, int width, int channels){
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
     float value = 0.0f;
     int half_kernel_size = kernel_size/2;
-    int DIM = imageChannels*imageRows*imageColumns;
+    int DIM = channels*height*width;
 
     if(idx>=DIM) return;
 
@@ -22,7 +25,7 @@ __global__ void blurImage(unsigned char *image,unsigned char *blurred_image,floa
 
     for(int m=-half_kernel_size; m<=half_kernel_size;m++){
         for(int n=-half_kernel_size; n<=half_kernel_size;n++){
-            int toAddIdx = (m*imageColumns + n)*imageChannels;
+            int toAddIdx = (m*width + n)*channels;
             if ( ! (idx+toAddIdx >= DIM || idx+toAddIdx < 0)){              
                 unsigned char value = image[idx+toAddIdx];
                 float gaussianValue = gaussianMatrix[(m+half_kernel_size)*kernel_size + (n+half_kernel_size)];
@@ -41,15 +44,16 @@ __global__ void blurImage(unsigned char *image,unsigned char *blurred_image,floa
 
 void kernel(unsigned char *image, 
             unsigned char* blurred_image, 
-            float *gaussianFunction, 
+            float *gaussianMatrix, 
             int DIM, 
             int kernel_size, 
-            int rows, 
-            int columns, 
+            int height, 
+            int width, 
             int channels,
             int *dataTransferTime,
             int *computationTime){
 
+    // create the device vectors
     unsigned char *device_image, *device_blurred_image;
     float *device_gaussianFunction;
 
@@ -59,17 +63,17 @@ void kernel(unsigned char *image,
     time_t startTransferTime;
     time(&startTransferTime);
 
-    //IMAGE
+    //IMAGE malloc and host to device copy
 
     cudaMalloc((void **)&device_image,size);
     cudaMemcpy(device_image,image,size,cudaMemcpyHostToDevice);
 
     cudaMalloc((void **)&device_blurred_image,size);
 
-    //GAUSSIAN FUNCTION
+    //GAUSSIAN FUNCTION malloc and host to device copy
 
     cudaMalloc((void **)&device_gaussianFunction,kernel_size * kernel_size * sizeof(float));
-    cudaMemcpy(device_gaussianFunction,gaussianFunction,kernel_size * kernel_size * sizeof(float),cudaMemcpyHostToDevice);
+    cudaMemcpy(device_gaussianFunction,gaussianMatrix,kernel_size * kernel_size * sizeof(float),cudaMemcpyHostToDevice);
 
 
     time_t stopTransferTime;
@@ -87,13 +91,15 @@ void kernel(unsigned char *image,
     cudaEventCreate(&stopComputationTime);
 
     cudaEventRecord(startComputationTime,0);
-    blurImage <<<blocksPerGrid,threadXblock>>>(device_image,device_blurred_image,device_gaussianFunction,kernel_size,rows,columns,channels);
+    blurImage <<<blocksPerGrid,threadXblock>>>(device_image,device_blurred_image,device_gaussianFunction,kernel_size,height,width,channels);
     cudaEventRecord(stopComputationTime,0);
 
     cudaDeviceSynchronize();
 
     time(&startTransferTime);
 
+
+    // device to host copy
     cudaMemcpy(blurred_image,device_blurred_image,size,cudaMemcpyDeviceToHost);
     
     time(&stopTransferTime);
@@ -105,15 +111,9 @@ void kernel(unsigned char *image,
     *computationTime = elapsedTime;
 
     cudaDeviceSynchronize();
+
+    //free 
+    cudaFree(device_blurred_image);
+    cudaFree(device_image);
+    cudaFree(device_gaussianFunction);
 };
-
-void testGPU(){
-    printf("Hello World from CPU!\n");
-    helloFromGPU <<<1, 10>>>();
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) {
-        printf("CUDA Kernel Launch Error: %s\n", cudaGetErrorString(err));
-    }
-    cudaDeviceReset();
-
-}
