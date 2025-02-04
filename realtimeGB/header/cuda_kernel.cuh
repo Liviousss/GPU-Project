@@ -7,7 +7,6 @@
 #include <vector>
 #include <iostream>
 
-#define N_STREAMS 10
 
 /**
  * GPU kernel wrapper. 
