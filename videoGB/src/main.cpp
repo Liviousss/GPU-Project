@@ -8,6 +8,11 @@ int BlurVideo(std::string src,std::string dest);
 
 
 int main() {
+
+    std::string videosd_src = "./videos/sd_video.mp4";
+    std::string videosd_dest = "./videos/sd_blurred_video.mp4";
+
+    BlurVideo(videosd_src,videosd_dest);
     
     std::string video720p_src = "./videos/720p_video.mp4";
     std::string video720p_dest = "./videos/720p_blurred_video.mp4";
@@ -51,8 +56,9 @@ int BlurVideo(std::string src,std::string dest){
     GaussianBlur GB = GaussianBlur();
 
     //Use the GPU to blur the video
-    int dataTransferTime, computationTime;
+    int dataTransferTime, computationTime, dataTransferTimeWithStreams, computationTimeWithStreams;
     Video blurredVideo = GB.blurVideoGPU(video,&dataTransferTime,&computationTime);
+    Video blurredVideoWithStreams = GB.blurVideoGPUusingStreams(video,&dataTransferTimeWithStreams,&computationTimeWithStreams);
 
     //Create video writer
     cv::VideoWriter writer(dest,
@@ -78,33 +84,14 @@ int BlurVideo(std::string src,std::string dest){
     cap.release();
     cv::destroyAllWindows();
 
+    printf("-------------------\n");
     std::cout << "Video blurred correctly" << std::endl;
     printf("GPU data transfer time : %d seconds\n",dataTransferTime);
     printf("GPU computation time : %d milliseconds\n",dataTransferTime);
+    printf("GPU data transfer time using streams: %d seconds\n",dataTransferTimeWithStreams);
+    printf("GPU computation time using streams: %d milliseconds\n",computationTimeWithStreams);
+    printf("-------------------\n");
 
     return 0;
 
 }
-
-
-/*
-    CODE FOR CPU GAUSSIAN BLUR
-
-
-    cv::VideoWriter writerCPU("./videos/720_blurred_video_CPU.mp4",
-                    cv::VideoWriter::fourcc('m','p','4','v'),
-                    fps,
-                    cv::Size(frameWidth,frameHeight));
-
-    int computationTimeCPU;
-    Video blurredVideoCPU = GB.blurVideo(video,&computationTimeCPU);
-    int j=0;
-    while(j<blurredVideoCPU.getFrames()){
-        unsigned char *data = blurredVideoCPU.getDataAtFrame(j);
-        frame = cv::Mat(blurredVideoCPU.getHeight(),blurredVideoCPU.getWidth(),CV_8UC3,data);
-        
-        //std::memcpy(frame.data,blurredVideo.dataVector[i],blurredVideo.getFrameSize());
-        writerCPU.write(frame);
-        j++;
-    };
-*/
