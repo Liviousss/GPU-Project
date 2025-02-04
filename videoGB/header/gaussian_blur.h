@@ -18,7 +18,7 @@ class GaussianBlur{
 
         int half_kernel_size;
 
-        float **gaussianMatrix;
+        float *gaussianMatrix;
 
         void generateGaussianMatrix();
 
@@ -31,14 +31,22 @@ class GaussianBlur{
             this->half_kernel_size = (int)(this->kernel_size / 2);
             generateGaussianMatrix();
         }
-
-        /*
-        FUNCTION FOR THE CPU IMPLEMENTATION : NOT WORKING
-
-        Video blurVideo(Video video, int* duration);
-        */
        
+        /**
+         * Blur the video using the GPU.
+         * @param video A Video object.
+         * @param dataTransferTime Pointer to the data transfer time time CPU-GPU and viceversa.
+         * @param computationTime Pointer to the GPU computation time. 
+        */
         Video blurVideoGPU(Video video, int* dataTransferTime,int* computationTime);
+
+        /**
+         * Blur the video using the GPU using cudaStreams.
+         * @param video A Video object.
+         * @param dataTransferTime Pointer to the data transfer time time CPU-GPU and viceversa.
+         * @param computationTime Pointer to the GPU computation time. 
+        */
+        Video blurVideoGPUusingStreams(Video video, int* dataTransferTime,int* computationTime);
 
 
 
