@@ -1,42 +1,66 @@
-# Compiler Setup
-CC = g++
-NVCC = nvcc
-CXXFLAGS = -O3 -Wall
-CUDAFLAGS = -arch=sm_75  # Adjust for your GPU architecture
-LDFLAGS = -lcudart  # Link to CUDA runtime
+# Compiler
+NVCC = /usr/local/cuda/bin/nvcc
+CXX = g++
 
-# Directory Setup
+# Directories
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 
-# Source and Object Files
-CPP_SOURCES = $(wildcard $(SRC_DIR)/*.cpp)  # All .cpp files in src/
-CU_SOURCE = $(SRC_DIR)/cuda_kernel.cu  # CUDA source file in the src folder
-OBJ_FILES = $(CPP_SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o) $(OBJ_DIR)/kernel.o  # Object files
+# Executable
+TARGET = $(BIN_DIR)/my_program
 
-# Executable name
-EXEC = $(BIN_DIR)/my_program
+# CUDA Architecture
+ARCH = -arch=sm_75
 
-# Default target to build the program
-all: $(EXEC)
+# Compiler Flags
+CXXFLAGS = -std=c++11 -g -fPIC
+NVCCFLAGS = $(ARCH) -std=c++11 -g --compiler-options '-fPIC'
 
-# Compile .cpp files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CC) $(CXXFLAGS) -c $< -o $@
+# Include & Library Paths
+INCLUDES = -I/usr/local/cuda/include -I/usr/include/opencv4
+LIBS = -L/usr/local/cuda/lib64 -lcudart -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_videoio
 
-# Compile .cu file
-$(OBJ_DIR)/kernel.o: $(CU_SOURCE)
-	$(NVCC) -c $(CU_SOURCE) -o $(OBJ_DIR)/kernel.o $(CUDAFLAGS)
+# Find all source files
+CPP_SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
+CU_SOURCES = $(wildcard $(SRC_DIR)/*.cu)
 
-# Link object files to create the executable
-$(EXEC): $(OBJ_FILES)
-	$(NVCC) $(OBJ_FILES) -o $(EXEC) $(LDFLAGS)
+# Generate object file paths
+CPP_OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(CPP_SOURCES))
+CU_OBJECTS = $(patsubst $(SRC_DIR)/%.cu, $(OBJ_DIR)/%.o, $(CU_SOURCES))
 
-# Clean up build artifacts
+# Create obj and bin directories if they don’t exist
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
+
+# Compile C++ files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+# Compile CUDA files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cu | $(OBJ_DIR)
+	$(NVCC) $(NVCCFLAGS) $(INCLUDES) -c $< -o $@
+
+# Link all objects and create executable
+$(TARGET): $(CPP_OBJECTS) $(CU_OBJECTS) | $(BIN_DIR)
+	$(NVCC) $(NVCCFLAGS) $(CPP_OBJECTS) $(CU_OBJECTS) $(LIBS) -o $(TARGET)
+
+# Build the project
+build: $(TARGET)
+	@echo "Build complete."
+
+# Run the compiled binary
+run: $(TARGET)
+	@echo "Running..."
+	./$(TARGET)
+
+# Clean object files and binary
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(EXEC)
+	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	@echo "Cleaned up build files."
 
-# Create the necessary directories if they don't exist
-$(OBJ_DIR) $(BIN_DIR):
-	mkdir -p $@
+
+.PHONY: build run clean
