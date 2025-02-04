@@ -6,16 +6,21 @@
 
 
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    int user_value;
+    if(argc==2){
+        try{
+            user_value = atoi(argv[1]);
+        }catch(std::exception &error){
+            std::cerr << "Error: wrong input!: "<<  std::endl;
+            return -1;
+        }
+    }
     
     //Open the webcam
-    cv::VideoCapture cap("/dev/video0", cv::CAP_V4L2);
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
-    cap.set(cv::CAP_PROP_FPS,30);
+    cv::VideoCapture cap(user_value ? user_value : 0, cv::CAP_V4L2);
 
-
-    // cv::VideoCapture cap("video0", cv::CAP_FFMPEG);
     if (!cap.isOpened()) {
         std::cerr << "Error: Cannot open webcam!: "<<  std::endl;
         return -1;
@@ -24,10 +29,10 @@ int main() {
     // Get video properties
     int frameWidth = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
     int frameHeight = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+    int channels = 3;
     double fps = cap.get(cv::CAP_PROP_FPS);
 
     std::vector<unsigned char*> frames;
-    int channels = 3;
     int frameSize = frameWidth * frameHeight * channels;
 
     GaussianBlur GB = GaussianBlur();
