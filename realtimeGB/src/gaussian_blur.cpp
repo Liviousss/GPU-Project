@@ -13,22 +13,21 @@ float gaussianFunction(int x, int y, int std_dev){
 
 
 void GaussianBlur::generateGaussianMatrix(){
-    float ** gaussianMatrix = (float **)malloc(kernel_size * sizeof(float *));
+    float * gaussianMatrix = (float *)malloc(kernel_size * kernel_size * sizeof(float *));
     float sum = 0.0f;
 
     for(int i=0; i<kernel_size; i++){
-        gaussianMatrix[i] = (float *)malloc(kernel_size * sizeof(float));
         for(int j=0; j<kernel_size; j++){
             float value = gaussianFunction(i,j,std_dev);
-            gaussianMatrix[i][j] = value;
+            gaussianMatrix[i*kernel_size + j] = value;
             sum += value;
         }
     }
 
-    //normalizzazione
+    //normalization
     for(int i=0; i<kernel_size; i++){
         for(int j=0; j<kernel_size; j++){
-            gaussianMatrix[i][j] /= sum;
+            gaussianMatrix[i*kernel_size + j] /= sum;
         }
     }
 
@@ -41,13 +40,7 @@ unsigned char *GaussianBlur::blurFrame(unsigned char *frame, int width, int heig
     int dim = width * height * channels;
     unsigned char * blurred_frame = (unsigned char *)malloc(dim * sizeof(unsigned char));
 
-    float *gaussianKernel = (float *)malloc(kernel_size*kernel_size*sizeof(float));
-
-    for(int i=0;i<kernel_size*kernel_size;i++){
-        gaussianKernel[i] = gaussianMatrix[i/kernel_size][i%kernel_size];
-    }
-
-    kernel(frame,blurred_frame,gaussianKernel,dim,kernel_size,height,width,channels,dataTransferTime,computationTime);
+    kernel(frame,blurred_frame,gaussianMatrix,dim,kernel_size,height,width,channels,dataTransferTime,computationTime);
 
     return blurred_frame;
 }

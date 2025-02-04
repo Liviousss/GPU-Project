@@ -17,7 +17,7 @@ class GaussianBlur{
 
         int half_kernel_size;
 
-        float **gaussianMatrix;
+        float *gaussianMatrix;
 
         void generateGaussianMatrix();
 
@@ -31,6 +31,15 @@ class GaussianBlur{
             generateGaussianMatrix();
         }
 
+    /**
+     * GPU function to blur a frame
+     * @param frame an array of unsigned char.
+     * @param width the frame width.
+     * @param height the frame height.
+     * @param channels the frame channels.
+     * @param dataTransferTime Pointer to the data transfer time time CPU-GPU and viceversa.
+     * @param computationTime Pointer to the GPU computation time.
+    */
     unsigned char *blurFrame(unsigned char *frame, int width, int height, int channels, int* dataTransferTime,int* computationTime);
         
 };
