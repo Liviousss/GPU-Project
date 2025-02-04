@@ -14,8 +14,10 @@ class Video{
         int frames;
         unsigned char *data;
         unsigned char **dataByFrame;
+        std::vector<unsigned char *> dataVector;
         
 
+        //function used to have consistent vulues of data, dataByFrame, dataVector
         void setDataGivingVector(std::vector<unsigned char *> dataVector){
             dataByFrame = (unsigned char **)malloc(frames * sizeof(unsigned char *));
             data = (unsigned char*)malloc(getDataLenght() * sizeof(unsigned char));
@@ -31,6 +33,7 @@ class Video{
             }
         }
 
+        //function used to have consistent vulues of data, dataByFrame, dataVector
         void alignData(unsigned char *data){
             this->dataByFrame = (unsigned char **)malloc(frames * sizeof(unsigned char *));
             
@@ -44,6 +47,7 @@ class Video{
             }
         }
 
+        //function used to have consistent vulues of data, dataByFrame, dataVector
         void alignData(unsigned char ** dataByFrame){
             data = (unsigned char*)malloc(getDataLenght() * sizeof(unsigned char));
             for(int i=0;i<frames;i++){
@@ -58,8 +62,6 @@ class Video{
         }
 
     public:
-
-        std::vector<unsigned char *> dataVector;
 
         Video(int width, int height, int channels, int frames, std::vector<unsigned char *> dataVector){
             this->width = width;
