@@ -45,8 +45,8 @@ Image GaussianBlur::blurImage(Image image, int* duration)
 
     unsigned char *blurredImageData = (unsigned char*)malloc(image.getDataLenght() * sizeof(unsigned char));
 
-    time_t start = 0;
-    time(&start);
+    std::chrono::high_resolution_clock::time_point start, stop;
+    start = std::chrono::high_resolution_clock::now();
 
     for(int i=0; i<rows;i++){
         for(int j=0; j<columns;j++){
@@ -78,13 +78,12 @@ Image GaussianBlur::blurImage(Image image, int* duration)
         }
     }
 
-    time_t stop = 0;
-    time(&stop);
+    stop = std::chrono::high_resolution_clock::now();
 
     Image blurredImage = Image(image.getWidth(), image.getHeight(), image.getChannels(), blurredImageData);
 
-    int timeElapsed = difftime(stop,start);
-    *duration = timeElapsed;
+    std::chrono::milliseconds timeElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
+    *duration = static_cast<int>(timeElapsed.count());
 
     return blurredImage;
 }

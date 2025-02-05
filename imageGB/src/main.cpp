@@ -45,9 +45,9 @@ void imageAnalisys(char* inputFilePath, char* outputFilePathCPU, char* outputFil
             return;
         };
 
-        printf("Durata CPU = %d\n",durataCPU);
-        printf("Durata transferTime GPU = %d\n",dataTransferTimeGPU);
-        printf("Durata computationTime GPU = %d millisecondi\n",computationTimeGPU);
+        printf("CPU duration= %d milliseconds\n",durataCPU);
+        printf("GPU data transfer time duration= %d milliseconds\n",dataTransferTimeGPU);
+        printf("GPU computation time duration= %d milliseconds\n",computationTimeGPU);
 
         printf("-------------------\n");
 

@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <vector>
+#include <chrono>
 #include "image.h"
 #include "cuda_kernel.cuh"
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <stdio.h>
+#include <chrono>
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
