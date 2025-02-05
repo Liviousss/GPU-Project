@@ -116,8 +116,8 @@ void kernel(unsigned char *video,
     int size = DIM * sizeof(unsigned char);
     int gaussianSize = kernel_size * sizeof(float);
 
-    time_t startTransferTime;
-    time(&startTransferTime);
+    std::chrono::high_resolution_clock::time_point startTransferTime, stopTransferTime;
+    startTransferTime = std::chrono::high_resolution_clock::now();
 
     //VIDEO
 
@@ -132,10 +132,9 @@ void kernel(unsigned char *video,
     cudaMemcpy(device_gaussianFunction,gaussianMatrix,kernel_size * kernel_size * sizeof(float),cudaMemcpyHostToDevice);
 
 
-    time_t stopTransferTime;
-    time(&stopTransferTime);
+    stopTransferTime = std::chrono::high_resolution_clock::now();
 
-    int firstTime = difftime(stopTransferTime,startTransferTime);
+    std::chrono::milliseconds firstTransferTime = std::chrono::duration_cast<std::chrono::milliseconds>(stopTransferTime-startTransferTime);
      
     //GPU CODE
 
@@ -154,14 +153,14 @@ void kernel(unsigned char *video,
 
     cudaDeviceSynchronize();
 
-    time(&startTransferTime);
+    startTransferTime = std::chrono::high_resolution_clock::now();
 
     cudaMemcpy(blurred_video,device_blurred_video,size,cudaMemcpyDeviceToHost);
     
-    time(&stopTransferTime);
+    stopTransferTime = std::chrono::high_resolution_clock::now();
 
-    int secondTime = difftime(stopTransferTime,startTransferTime);
-    *dataTransferTime = firstTime + secondTime;
+    std::chrono::milliseconds secondTransferTime = std::chrono::duration_cast<std::chrono::milliseconds>(stopTransferTime-startTransferTime);
+    *dataTransferTime = static_cast<int>(firstTransferTime.count() + secondTransferTime.count());
     float elapsedTime;
     cudaEventElapsedTime(&elapsedTime,startComputationTime,stopComputationTime);
     *computationTime = elapsedTime;
@@ -183,8 +182,8 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
     unsigned int size = DIM * sizeof(unsigned char);
     int gaussianSize = kernel_size * sizeof(float);
 
-    time_t startTransferTime;
-    time(&startTransferTime);
+    std::chrono::high_resolution_clock::time_point startTransferTime, stopTransferTime;
+    startTransferTime = std::chrono::high_resolution_clock::now();
 
     //VIDEO
 
@@ -199,10 +198,9 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
     cudaMalloc((void **)&device_gaussianFunction,kernel_size * kernel_size * sizeof(float));
     cudaMemcpy(device_gaussianFunction,gaussianMatrix,kernel_size * kernel_size * sizeof(float),cudaMemcpyHostToDevice);
 
-    time_t stopTransferTime;
-    time(&stopTransferTime);
+    stopTransferTime = std::chrono::high_resolution_clock::now();
 
-    int firstTime = difftime(stopTransferTime,startTransferTime);
+    std::chrono::milliseconds firstTransferTime = std::chrono::duration_cast<std::chrono::milliseconds>(stopTransferTime-startTransferTime);
      
     //GPU CODE    
     //Streams initialization
@@ -240,14 +238,14 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
         cudaStreamDestroy(streams[i]);
     }
 
-    time(&startTransferTime);
+    startTransferTime = std::chrono::high_resolution_clock::now();
 
     cudaMemcpy(blurred_video,device_blurred_video,size,cudaMemcpyDeviceToHost);
     
-    time(&stopTransferTime);
+    stopTransferTime = std::chrono::high_resolution_clock::now();
 
-    int secondTime = difftime(stopTransferTime,startTransferTime);
-    *dataTransferTime = firstTime + secondTime;
+    std::chrono::milliseconds secondTransferTime = std::chrono::duration_cast<std::chrono::milliseconds>(stopTransferTime-startTransferTime);
+    *dataTransferTime = static_cast<int>(firstTransferTime.count() + secondTransferTime.count());
     float elapsedTime;
     cudaEventElapsedTime(&elapsedTime,startComputationTime,stopComputationTime);
     *computationTime = elapsedTime;
@@ -258,11 +256,4 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
     cudaFree(device_video);
 
     cudaDeviceSynchronize();
-
-
-
-
-
-
-
 }

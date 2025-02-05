@@ -86,9 +86,9 @@ int BlurVideo(std::string src,std::string dest){
 
     printf("-------------------\n");
     std::cout << "Video blurred correctly" << std::endl;
-    printf("GPU data transfer time : %d seconds\n",dataTransferTime);
+    printf("GPU data transfer time : %d milliseconds\n",dataTransferTime);
     printf("GPU computation time : %d milliseconds\n",dataTransferTime);
-    printf("GPU data transfer time using streams: %d seconds\n",dataTransferTimeWithStreams);
+    printf("GPU data transfer time using streams: %d milliseconds\n",dataTransferTimeWithStreams);
     printf("GPU computation time using streams: %d milliseconds\n",computationTimeWithStreams);
     printf("-------------------\n");
 
