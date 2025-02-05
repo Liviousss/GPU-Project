@@ -35,12 +35,12 @@ void GaussianBlur::generateGaussianMatrix(){
     this->gaussianMatrix = gaussianMatrix;
 };
 
-unsigned char *GaussianBlur::blurFrame(unsigned char *frame, int width, int height, int channels, int* dataTransferTime,int* computationTime){
+unsigned char *GaussianBlur::blurFrame(unsigned char *frame, int width, int height, int channels){
     
     int dim = width * height * channels;
     unsigned char * blurred_frame = (unsigned char *)malloc(dim * sizeof(unsigned char));
 
-    kernel(frame,blurred_frame,gaussianMatrix,dim,kernel_size,height,width,channels,dataTransferTime,computationTime);
+    kernel(frame,blurred_frame,gaussianMatrix,dim,kernel_size,height,width,channels);
 
     return blurred_frame;
 }

@@ -28,6 +28,4 @@ void kernel(unsigned char *frame,
             int kernel_size, 
             int rows, 
             int columns, 
-            int channels,
-            int *dataTransferTime,
-            int *computationTime);
+            int channels);

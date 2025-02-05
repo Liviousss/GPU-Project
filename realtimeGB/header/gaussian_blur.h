@@ -37,9 +37,7 @@ class GaussianBlur{
      * @param width the frame width.
      * @param height the frame height.
      * @param channels the frame channels.
-     * @param dataTransferTime Pointer to the data transfer time time CPU-GPU and viceversa.
-     * @param computationTime Pointer to the GPU computation time.
     */
-    unsigned char *blurFrame(unsigned char *frame, int width, int height, int channels, int* dataTransferTime,int* computationTime);
+    unsigned char *blurFrame(unsigned char *frame, int width, int height, int channels);
         
 };

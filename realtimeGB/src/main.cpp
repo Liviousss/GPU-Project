@@ -37,8 +37,6 @@ int main(int argc, char* argv[]) {
 
     GaussianBlur GB = GaussianBlur();
 
-    int computationTime, dataTransferTime;
-
     //Read the video
     cv::Mat frame;
     while (true) {
@@ -48,7 +46,7 @@ int main(int argc, char* argv[]) {
 
         std::memcpy(frameData, frame.data, frameSize);
 
-        unsigned char* blurredFrame = GB.blurFrame(frameData,frameWidth,frameHeight,3,&dataTransferTime,&computationTime);
+        unsigned char* blurredFrame = GB.blurFrame(frameData,frameWidth,frameHeight,channels);
 
         cv::Mat blurredFramePlayer;
         blurredFramePlayer = cv::Mat(frameHeight,frameWidth,CV_8UC3,blurredFrame);
