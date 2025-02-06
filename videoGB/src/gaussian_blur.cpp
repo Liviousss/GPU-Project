@@ -57,7 +57,7 @@ Video GaussianBlur::blurVideoGPU(Video video, int* dataTransferTime,int* computa
     return blurredVideo;
 }
 
-Video GaussianBlur::blurVideoGPUusingStreams(Video video, int *dataTransferTime, int *computationTime){
+Video GaussianBlur::blurVideoGPUusingStreams(Video video, int *totalTime){
     int DIM = video.getDataLenght();
     unsigned char *blurredVideoData = (unsigned char *)malloc(video.getDataLenght() * sizeof(unsigned char));
     
@@ -70,8 +70,7 @@ Video GaussianBlur::blurVideoGPUusingStreams(Video video, int *dataTransferTime,
             video.getWidth(),
             video.getChannels(),
             video.getFrames(),
-            dataTransferTime,
-            computationTime);
+            totalTime);
     
     cudaDeviceSynchronize();
 

@@ -235,7 +235,7 @@ void kernel(unsigned char *video,
 };
 
 void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, float *gaussianMatrix, unsigned int DIM, 
-                        int kernel_size, int rows, int columns, int channels, int frames, int *dataTransferTime, int *computationTime){
+                        int kernel_size, int rows, int columns, int channels, int frames, int *totalTime){
 
     unsigned char *device_video, *device_blurred_video;
     float *device_gaussianmatrix;
@@ -249,9 +249,6 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
     //VIDEO
 
     cudaMalloc((void **)&device_video,size);
-
-    cudaMemcpy(device_video,video,size,cudaMemcpyHostToDevice);
-
     cudaMalloc((void **)&device_blurred_video,size);
 
     //GAUSSIAN matrix
@@ -278,14 +275,12 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
     cudaEventCreate(&startComputationTime);
     cudaEventCreate(&stopComputationTime);
 
-    
-
-
     cudaEventRecord(startComputationTime);
     for(int i=0;i<frames;i++){
         
         int offset = i * frameSize;
         
+        cudaMemcpyAsync(device_video+offset,video+offset,frameSize*sizeof(unsigned char),cudaMemcpyHostToDevice,streams[i]);
         blurImage <<<blocksPerGrid,threadXblock,0,streams[i]>>>(device_video + offset,
                                                                 device_blurred_video + offset,
                                                                 device_gaussianmatrix,
@@ -293,6 +288,7 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
                                                                 rows,
                                                                 columns,
                                                                 channels);
+        cudaMemcpyAsync(blurred_video+offset,device_blurred_video+offset,frameSize*sizeof(unsigned char),cudaMemcpyDeviceToHost,streams[i]);
 
         
     }
@@ -309,17 +305,8 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
     for (int i = 0; i < frames; i++) {
         cudaStreamDestroy(streams[i]);
     }
-
-    startTransferTime = std::chrono::high_resolution_clock::now();
-
-    cudaMemcpy(blurred_video,device_blurred_video,size,cudaMemcpyDeviceToHost);
     
-    stopTransferTime = std::chrono::high_resolution_clock::now();
-
-    std::chrono::milliseconds secondTransferTime = std::chrono::duration_cast<std::chrono::milliseconds>(stopTransferTime-startTransferTime);
-    *dataTransferTime = static_cast<int>(firstTransferTime.count() + secondTransferTime.count());
-    
-    *computationTime = elapsedTime;
+    *totalTime = elapsedTime + firstTransferTime.count();
 
     //MEMORY FREE
     cudaFree(device_blurred_video);

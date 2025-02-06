@@ -44,8 +44,7 @@ void kernel(unsigned char *video,
  * @param width the video width.
  * @param channels the video channels.
  * @param frames the video frames.
- * @param dataTransferTime Pointer to the data transfer time time CPU-GPU and viceversa.
- * @param computationTime Pointer to the GPU computation time. 
+ * @param totalTime Pointer to the data transfer time plus computation time CPU-GPU and viceversa.
 */
 void kernelUsingStreams(unsigned char *video, 
             unsigned char* blurred_video, 
@@ -56,8 +55,7 @@ void kernelUsingStreams(unsigned char *video,
             int columns, 
             int channels,
             int frames,
-            int *dataTransferTime,
-            int *computationTime);
+            int *totalTime);
 
 /**
  * GPU kernel wrapper for the cudaStream implementation. 

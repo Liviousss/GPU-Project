@@ -57,10 +57,10 @@ int BlurVideo(std::string src,std::string dest){
 
     //Use the GPU to blur the video
     int dataTransferTime = -1, computationTime = -1, 
-        dataTransferTimeWithStreams = -1, computationTimeWithStreams = -1,
+        totalTimeWithStreams = -1,
         dataTransferTimeWithSharedMem = -1, computationTimeWithSharedMem = -1;
     Video blurredVideo = GB.blurVideoGPU(video,&dataTransferTime,&computationTime);
-    Video blurredVideoWithStreams = GB.blurVideoGPUusingStreams(video,&dataTransferTimeWithStreams,&computationTimeWithStreams);
+    Video blurredVideoWithStreams = GB.blurVideoGPUusingStreams(video,&totalTimeWithStreams);
     Video blurredVideoWithSharedMem = GB.blurVideoGPUusingSharedMemory(video,&dataTransferTimeWithSharedMem,&computationTimeWithSharedMem);
 
     //Create video writer
@@ -96,9 +96,8 @@ int BlurVideo(std::string src,std::string dest){
         printf("Something went wrong with basic video blur function\n");
     }
     
-    if(dataTransferTimeWithStreams!=-1 && computationTimeWithStreams!=-1){
-        printf("GPU data transfer time using streams: %d milliseconds\n",dataTransferTimeWithStreams);
-        printf("GPU computation time using streams: %d milliseconds\n",computationTimeWithStreams);
+    if(totalTimeWithStreams!=-1){
+        printf("GPU total time using streams: %d milliseconds\n",totalTimeWithStreams);
     }
     else{
         printf("Something went wrong with video blur using streams\n");
