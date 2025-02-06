@@ -56,9 +56,12 @@ int BlurVideo(std::string src,std::string dest){
     GaussianBlur GB = GaussianBlur();
 
     //Use the GPU to blur the video
-    int dataTransferTime, computationTime, dataTransferTimeWithStreams, computationTimeWithStreams;
+    int dataTransferTime = -1, computationTime = -1, 
+        dataTransferTimeWithStreams = -1, computationTimeWithStreams = -1,
+        dataTransferTimeWithSharedMem = -1, computationTimeWithSharedMem = -1;
     Video blurredVideo = GB.blurVideoGPU(video,&dataTransferTime,&computationTime);
     Video blurredVideoWithStreams = GB.blurVideoGPUusingStreams(video,&dataTransferTimeWithStreams,&computationTimeWithStreams);
+    Video blurredVideoWithSharedMem = GB.blurVideoGPUusingSharedMemory(video,&dataTransferTimeWithSharedMem,&computationTimeWithSharedMem);
 
     //Create video writer
     cv::VideoWriter writer(dest,
@@ -85,11 +88,30 @@ int BlurVideo(std::string src,std::string dest){
     cv::destroyAllWindows();
 
     printf("-------------------\n");
-    std::cout << "Video blurred correctly" << std::endl;
-    printf("GPU data transfer time : %d milliseconds\n",dataTransferTime);
-    printf("GPU computation time : %d milliseconds\n",dataTransferTime);
-    printf("GPU data transfer time using streams: %d milliseconds\n",dataTransferTimeWithStreams);
-    printf("GPU computation time using streams: %d milliseconds\n",computationTimeWithStreams);
+    if(dataTransferTime!=-1 && computationTime!=-1){
+        printf("GPU data transfer time : %d milliseconds\n",dataTransferTime);
+        printf("GPU computation time : %d milliseconds\n",computationTime);
+    }
+    else{
+        printf("Something went wrong with basic video blur function\n");
+    }
+    
+    if(dataTransferTimeWithStreams!=-1 && computationTimeWithStreams!=-1){
+        printf("GPU data transfer time using streams: %d milliseconds\n",dataTransferTimeWithStreams);
+        printf("GPU computation time using streams: %d milliseconds\n",computationTimeWithStreams);
+    }
+    else{
+        printf("Something went wrong with video blur using streams\n");
+    }
+
+    if(dataTransferTimeWithSharedMem!=-1 && computationTimeWithSharedMem!=-1){
+        printf("GPU data transfer time using shared memory: %d milliseconds\n",dataTransferTimeWithSharedMem);
+        printf("GPU computation time using shared memory: %d milliseconds\n",computationTimeWithSharedMem);
+    }
+    else{
+        printf("Something went wrong with video blur using shared memory\n");
+    }
+
     printf("-------------------\n");
 
     return 0;

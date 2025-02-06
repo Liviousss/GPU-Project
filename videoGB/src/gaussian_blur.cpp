@@ -1,5 +1,4 @@
 #include "../header/gaussian_blur.h"
-#include <time.h>
 
 float gaussianFunction(int x, int y, int std_dev){
 
@@ -63,6 +62,38 @@ Video GaussianBlur::blurVideoGPUusingStreams(Video video, int *dataTransferTime,
     unsigned char *blurredVideoData = (unsigned char *)malloc(video.getDataLenght() * sizeof(unsigned char));
     
     kernelUsingStreams(video.getData(),
+            blurredVideoData,
+            this->gaussianMatrix,
+            video.getDataLenght(),
+            this->kernel_size,
+            video.getHeight(),
+            video.getWidth(),
+            video.getChannels(),
+            video.getFrames(),
+            dataTransferTime,
+            computationTime);
+    
+    cudaDeviceSynchronize();
+
+    Video blurredVideo = Video(video.getWidth(), video.getHeight(), video.getChannels(), video.getFrames(), blurredVideoData);
+    return blurredVideo;
+}
+
+Video GaussianBlur::blurVideoGPUusingSharedMemory(Video video, int *dataTransferTime, int *computationTime){
+
+    int DIM = video.getDataLenght();
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, 0);
+    if(DIM>deviceProp.sharedMemPerBlock){
+        std::cerr << "Video too big for the shared memory" << std::endl;
+        std::vector<unsigned char*> vec(0);
+        return Video(0,0,0,0,vec);
+    }
+
+    
+    unsigned char *blurredVideoData = (unsigned char *)malloc(video.getDataLenght() * sizeof(unsigned char));
+    
+    kernelUsingSharedMemory(video.getData(),
             blurredVideoData,
             this->gaussianMatrix,
             video.getDataLenght(),
