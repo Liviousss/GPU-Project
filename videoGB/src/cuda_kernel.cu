@@ -262,12 +262,13 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
      
     //GPU CODE    
     //Streams initialization
-    std::vector<cudaStream_t> streams(frames);
-    for(int i=0;i<frames;i++){
+    int n_streams = 16;
+    std::vector<cudaStream_t> streams(n_streams);
+    for(int i=0;i<n_streams;i++){
         cudaError_t error1 = cudaStreamCreate(&streams[i]);
     }
 
-    int frameSize = channels * rows * columns;
+    int streamSize = DIM / n_streams;
     int threadXblock = 1024;
     int blocksPerGrid = (DIM/frames + threadXblock - 1) / threadXblock;
 
@@ -276,25 +277,26 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
     cudaEventCreate(&stopComputationTime);
 
     cudaEventRecord(startComputationTime);
-    for(int i=0;i<frames;i++){
+    for(int i=0;i<n_streams;i++){
         
-        int offset = i * frameSize;
+        int offset = i * streamSize;
         
-        cudaMemcpyAsync(device_video+offset,video+offset,frameSize*sizeof(unsigned char),cudaMemcpyHostToDevice,streams[i]);
-        blurImage <<<blocksPerGrid,threadXblock,0,streams[i]>>>(device_video + offset,
+        cudaMemcpyAsync(device_video+offset,video+offset,streamSize*sizeof(unsigned char),cudaMemcpyHostToDevice,streams[i]);
+        blurVideo <<<blocksPerGrid,threadXblock,0,streams[i]>>>(device_video + offset,
                                                                 device_blurred_video + offset,
                                                                 device_gaussianmatrix,
                                                                 kernel_size,
                                                                 rows,
                                                                 columns,
-                                                                channels);
-        cudaMemcpyAsync(blurred_video+offset,device_blurred_video+offset,frameSize*sizeof(unsigned char),cudaMemcpyDeviceToHost,streams[i]);
+                                                                channels,
+                                                                frames);
+        cudaMemcpyAsync(blurred_video+offset,device_blurred_video+offset,streamSize*sizeof(unsigned char),cudaMemcpyDeviceToHost,streams[i]);
 
         
     }
 
     cudaEventRecord(stopComputationTime);
-    for (int i = 0; i < frames; i++) {
+    for (int i = 0; i < n_streams; i++) {
         cudaStreamSynchronize(streams[i]);
     }
     cudaEventSynchronize(stopComputationTime);
@@ -302,7 +304,7 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
     cudaEventElapsedTime(&elapsedTime,startComputationTime,stopComputationTime);
 
     //destroy streams
-    for (int i = 0; i < frames; i++) {
+    for (int i = 0; i < n_streams; i++) {
         cudaStreamDestroy(streams[i]);
     }
     
