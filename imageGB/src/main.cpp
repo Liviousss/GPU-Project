@@ -4,20 +4,22 @@
 
 
 
-void imageAnalisys(char* inputFilePath, char* outputFilePathCPU,char* outputFilePathGPU);
+void imageAnalisys(char* title, char* inputFilePath, char* outputFilePathCPU,char* outputFilePathGPU);
 
 int main(){
     
-    imageAnalisys("./images/720p_image.jpg","./images/720p_blurred_image_CPU.jpg","./images/720p_blurred_image_GPU.jpg");
-    imageAnalisys("./images/1080p_image.jpg","./images/1080p_blurred_image_CPU.jpg","./images/1080p_blurred_image_GPU.jpg");
-    imageAnalisys("./images/2k_image.jpg","./images/2k_blurred_image_CPU.jpg","./images/2k_blurred_image_GPU.jpg");
-    imageAnalisys("./images/4k_image.jpg","./images/4k_blurred_image_CPU.jpg","./images/4k_blurred_image_GPU.jpg");
+    imageAnalisys("Image resolution: 720p","./images/720p_image.jpg","./images/720p_blurred_image_CPU.jpg","./images/720p_blurred_image_GPU.jpg");
+    imageAnalisys("Image resolution: 1080p","./images/1080p_image.jpg","./images/1080p_blurred_image_CPU.jpg","./images/1080p_blurred_image_GPU.jpg");
+    imageAnalisys("Image resolution: 2k","./images/2k_image.jpg","./images/2k_blurred_image_CPU.jpg","./images/2k_blurred_image_GPU.jpg");
+    imageAnalisys("Image resolution: 4k","./images/4k_image.jpg","./images/4k_blurred_image_CPU.jpg","./images/4k_blurred_image_GPU.jpg");
 
 }
 
-void imageAnalisys(char* inputFilePath, char* outputFilePathCPU, char* outputFilePathGPU){
+void imageAnalisys(char* title, char* inputFilePath, char* outputFilePathCPU, char* outputFilePathGPU){
     
     printf("-------------------\n");
+
+    std::cout << title << std::endl;
 
     try{
         //Load the image

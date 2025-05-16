@@ -45,6 +45,8 @@ Image GaussianBlur::blurImage(Image image, int* duration)
 
     unsigned char *blurredImageData = (unsigned char*)malloc(image.getDataLenght() * sizeof(unsigned char));
 
+    unsigned char *imageData = image.getData();
+
     std::chrono::high_resolution_clock::time_point start, stop;
     start = std::chrono::high_resolution_clock::now();
 
@@ -57,7 +59,7 @@ Image GaussianBlur::blurImage(Image image, int* duration)
                 for(int m=-this->half_kernel_size; m<=this->half_kernel_size;m++){
                     for(int n=-this->half_kernel_size; n<=this->half_kernel_size;n++){
                         if ( ! (i+m >= rows || i+m < 0 || j+n+c>=columns || j+n < 0)){
-                            unsigned char value = (image.getData())[((i+m)*columns + (j+n)) * channels + c];
+                            unsigned char value = imageData[((i+m)*columns + (j+n)) * channels + c];
                             int pos = (m+half_kernel_size) * kernel_size + n+half_kernel_size;
                             float gaussianValue = this->gaussianMatrix[pos];
                             float valueXblur = value * gaussianValue;

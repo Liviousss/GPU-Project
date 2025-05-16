@@ -83,14 +83,14 @@ void kernel(unsigned char *image,
     //GPU CODE
 
     int threadXblock = 1024;
-    int blocksPerGrid = (DIM + threadXblock - 1) / threadXblock;
+    int blocks = (DIM + threadXblock - 1) / threadXblock;
 
     cudaEvent_t startComputationTime,stopComputationTime;
     cudaEventCreate(&startComputationTime);
     cudaEventCreate(&stopComputationTime);
 
     cudaEventRecord(startComputationTime,0);
-    blurImage <<<blocksPerGrid,threadXblock>>>(device_image,device_blurred_image,device_gaussianFunction,kernel_size,height,width,channels);
+    blurImage <<<blocks,threadXblock>>>(device_image,device_blurred_image,device_gaussianFunction,kernel_size,height,width,channels);
     cudaEventRecord(stopComputationTime,0);
 
     cudaDeviceSynchronize();
