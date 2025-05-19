@@ -200,14 +200,14 @@ void kernel(unsigned char *video,
     //GPU CODE
 
     int threadXblock = 1024;
-    int blocksPerGrid = (DIM + threadXblock - 1) / threadXblock;
+    int blocks = (DIM + threadXblock - 1) / threadXblock;
 
     cudaEvent_t startComputationTime,stopComputationTime;
     cudaEventCreate(&startComputationTime);
     cudaEventCreate(&stopComputationTime);
 
     cudaEventRecord(startComputationTime,0);
-    blurVideo <<<blocksPerGrid,threadXblock>>>(device_video,device_blurred_video,device_gaussianmatrix,kernel_size,rows,columns,channels,frames);
+    blurVideo <<<blocks,threadXblock>>>(device_video,device_blurred_video,device_gaussianmatrix,kernel_size,rows,columns,channels,frames);
     cudaEventRecord(stopComputationTime,0);
 
     cudaError_t error = cudaGetLastError();
@@ -270,7 +270,7 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
 
     int streamSize = DIM / n_streams;
     int threadXblock = 1024;
-    int blocksPerGrid = (DIM/frames + threadXblock - 1) / threadXblock;
+    int blocks = (DIM/frames + threadXblock - 1) / threadXblock;
 
     cudaEvent_t startComputationTime,stopComputationTime;
     cudaEventCreate(&startComputationTime);
@@ -282,7 +282,7 @@ void kernelUsingStreams(unsigned char *video, unsigned char *blurred_video, floa
         int offset = i * streamSize;
         
         cudaMemcpyAsync(device_video+offset,video+offset,streamSize*sizeof(unsigned char),cudaMemcpyHostToDevice,streams[i]);
-        blurVideo <<<blocksPerGrid,threadXblock,0,streams[i]>>>(device_video + offset,
+        blurVideo <<<blocks,threadXblock,0,streams[i]>>>(device_video + offset,
                                                                 device_blurred_video + offset,
                                                                 device_gaussianmatrix,
                                                                 kernel_size,
@@ -362,14 +362,14 @@ void kernelUsingSharedMemory(unsigned char *video,
     //GPU CODE
 
     int threadXblock = 1024;
-    int blocksPerGrid = (DIM + threadXblock - 1) / threadXblock;
+    int blocks = (DIM + threadXblock - 1) / threadXblock;
 
     cudaEvent_t startComputationTime,stopComputationTime;
     cudaEventCreate(&startComputationTime);
     cudaEventCreate(&stopComputationTime);
 
     cudaEventRecord(startComputationTime,0);
-    blurVideoWithSharedMemory <<<blocksPerGrid,threadXblock,DIM>>>(device_video,device_blurred_video,device_gaussianmatrix,kernel_size,rows,columns,channels,frames);
+    blurVideoWithSharedMemory <<<blocks,threadXblock,DIM>>>(device_video,device_blurred_video,device_gaussianmatrix,kernel_size,rows,columns,channels,frames);
     cudaEventRecord(stopComputationTime,0);
 
     cudaError_t error = cudaGetLastError();
