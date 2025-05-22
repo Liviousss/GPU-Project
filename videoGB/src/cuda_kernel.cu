@@ -382,7 +382,8 @@ void kernelUsingSharedMemory(unsigned char *video,
                              int channels, 
                              int frames, 
                              int *dataTransferTime, 
-                             int *computationTime){
+                             int *computationTime,
+                             bool *isPossibleToUseSharedMemory){
 
     unsigned char *device_video, *device_blurred_video;
     float *device_gaussianmatrix;
@@ -419,8 +420,15 @@ void kernelUsingSharedMemory(unsigned char *video,
     cudaEventCreate(&startComputationTime);
     cudaEventCreate(&stopComputationTime);
 
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, 0);
+    if(blocks*threadXblock>deviceProp.sharedMemPerBlock){
+        *isPossibleToUseSharedMemory = false;
+        return ;
+    }
+
     cudaEventRecord(startComputationTime,0);
-    blurVideoWithSharedMemory <<<blocks,threadXblock,DIM>>>(device_video,device_blurred_video,device_gaussianmatrix,kernel_size,rows,columns,channels,frames);
+    blurVideoWithSharedMemory <<<blocks,threadXblock,blocks*threadXblock>>>(device_video,device_blurred_video,device_gaussianmatrix,kernel_size,rows,columns,channels,frames);
     cudaEventRecord(stopComputationTime,0);
 
     cudaError_t error = cudaGetLastError();

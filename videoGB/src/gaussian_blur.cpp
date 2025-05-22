@@ -81,14 +81,7 @@ Video GaussianBlur::blurVideoGPUusingStreams(Video video, int *totalTime){
 Video GaussianBlur::blurVideoGPUusingSharedMemory(Video video, int *dataTransferTime, int *computationTime){
 
     int DIM = video.getDataLenght();
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, 0);
-    if(DIM>deviceProp.sharedMemPerBlock){
-        std::cerr << "Video too big for the shared memory" << std::endl;
-        std::vector<unsigned char*> vec(0);
-        return Video(0,0,0,0,vec);
-    }
-
+    bool isPossibleToUseSharedMemory = true;
     
     unsigned char *blurredVideoData = (unsigned char *)malloc(video.getDataLenght() * sizeof(unsigned char));
     
@@ -102,10 +95,17 @@ Video GaussianBlur::blurVideoGPUusingSharedMemory(Video video, int *dataTransfer
             video.getChannels(),
             video.getFrames(),
             dataTransferTime,
-            computationTime);
+            computationTime,
+            &isPossibleToUseSharedMemory);
     
     cudaDeviceSynchronize();
 
+    if(isPossibleToUseSharedMemory){
+        std::cerr << "Video too big for the shared memory" << std::endl;
+        std::vector<unsigned char*> vec(0);
+        return Video(0,0,0,0,vec);
+    }
+    
     Video blurredVideo = Video(video.getWidth(), video.getHeight(), video.getChannels(), video.getFrames(), blurredVideoData);
     return blurredVideo;
 }

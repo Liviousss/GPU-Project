@@ -81,4 +81,5 @@ void kernelUsingSharedMemory(unsigned char *video,
             int channels,
             int frames,
             int *dataTransferTime,
-            int *computationTime);
+            int *computationTime,
+            bool *isPossibleToUseSharedMemory);
