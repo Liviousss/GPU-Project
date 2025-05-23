@@ -39,8 +39,15 @@ unsigned char *GaussianBlur::blurFrame(unsigned char *frame, int width, int heig
     
     int dim = width * height * channels;
     unsigned char * blurred_frame = (unsigned char *)malloc(dim * sizeof(unsigned char));
-
+    std::chrono::high_resolution_clock::time_point start, stop;
+    
+    start = std::chrono::high_resolution_clock::now();
     kernel(frame,blurred_frame,gaussianMatrix,dim,kernel_size,height,width,channels);
+    stop = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds timeElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(stop-start);
+    int duration = static_cast<int>(timeElapsed.count());
+
+    std::cout << "Blurred Frame in " << duration << " ms" << std::endl;
 
     return blurred_frame;
 }

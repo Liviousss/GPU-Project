@@ -18,12 +18,24 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    //Open the webcam
-    cv::VideoCapture cap(user_value ? user_value : 0, cv::CAP_V4L2);
 
-    if (!cap.isOpened()) {
+    cv::VideoCapture cap;
+    bool writeVideo = false;
+
+    //Open the webcam
+    cap.open(user_value ? user_value : 0, cv::CAP_V4L2);
+    
+    if (cap.isOpened()) {
         std::cerr << "Error: Cannot open webcam!: "<<  std::endl;
-        return -1;
+    }else{
+        writeVideo = true;
+
+        //if no webcam loaded, open a sample video
+        cap.open("./sample/4k_sample.mp4");
+        if (!cap.isOpened()) {
+            std::cerr << "Error: Cannot open sample video!: "<<  std::endl;
+            return -1;
+        }
     }
 
     // Get video properties
@@ -51,11 +63,26 @@ int main(int argc, char* argv[]) {
         cv::Mat blurredFramePlayer;
         blurredFramePlayer = cv::Mat(frameHeight,frameWidth,CV_8UC3,blurredFrame);
 
-        cv::imshow("Normal webcam",frame);
+        if(writeVideo){
+            cv::namedWindow("Original Video",cv::WindowFlags::WINDOW_NORMAL);
+            cv::resizeWindow("Original Video",1980,1020);
+            cv::imshow("Original Video",frame);
 
-        cv::imshow("Blurred Webcam",blurredFramePlayer);
-        if (cv::waitKey(1) == 27) // Exit if 'ESC' is pressed
-            break;
+            cv::namedWindow("Blurred Video",cv::WindowFlags::WINDOW_NORMAL);
+            cv::resizeWindow("Blurred Video",1980,1020);
+            cv::imshow("Blurred Video",blurredFramePlayer);
+            if (cv::waitKey(1) == 27) // Exit if 'ESC' is pressed
+                break;
+        }
+        else{
+            cv::imshow("Normal webcam",frame);
+
+            cv::imshow("Blurred Webcam",blurredFramePlayer);
+            if (cv::waitKey(1) == 27) // Exit if 'ESC' is pressed
+                break;
+        }
+
+        
     }
     return 0;
 }
