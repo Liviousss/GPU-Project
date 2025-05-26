@@ -20,18 +20,18 @@ int main(int argc, char* argv[]) {
     
 
     cv::VideoCapture cap;
-    bool writeVideo = false;
+    bool showVideo = false;
 
     //Open the webcam
     cap.open(user_value ? user_value : 0, cv::CAP_V4L2);
     
     if (cap.isOpened()) {
-        std::cerr << "Error: Cannot open webcam!: "<<  std::endl;
+        std::cout << "Webcam opened correctly"<<  std::endl;
     }else{
-        writeVideo = true;
+        showVideo = true;
 
         //if no webcam loaded, open a sample video
-        cap.open("./sample/4k_sample.mp4");
+        cap.open("./sample/1080p_sample.mp4");
         if (!cap.isOpened()) {
             std::cerr << "Error: Cannot open sample video!: "<<  std::endl;
             return -1;
@@ -52,7 +52,10 @@ int main(int argc, char* argv[]) {
     //Read the video
     cv::Mat frame;
     while (true) {
-        cap >> frame;
+        bool success = cap.read(frame);
+        if(!success){
+            break;
+        }
         
         unsigned char* frameData = new unsigned char[frameSize];
 
@@ -63,10 +66,7 @@ int main(int argc, char* argv[]) {
         cv::Mat blurredFramePlayer;
         blurredFramePlayer = cv::Mat(frameHeight,frameWidth,CV_8UC3,blurredFrame);
 
-        if(writeVideo){
-            cv::namedWindow("Original Video",cv::WindowFlags::WINDOW_NORMAL);
-            cv::resizeWindow("Original Video",1980,1020);
-            cv::imshow("Original Video",frame);
+        if(showVideo){
 
             cv::namedWindow("Blurred Video",cv::WindowFlags::WINDOW_NORMAL);
             cv::resizeWindow("Blurred Video",1980,1020);

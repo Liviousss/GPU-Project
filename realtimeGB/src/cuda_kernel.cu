@@ -71,9 +71,9 @@ void kernel(unsigned char *frame,
     //GPU CODE
 
     int threadXblock = 1024;
-    int blocksPerGrid = (DIM + threadXblock - 1) / threadXblock;
+    int blocks = (DIM + threadXblock - 1) / threadXblock;
 
-    blurframe <<<blocksPerGrid,threadXblock>>>(device_frame,device_blurred_frame,device_gaussianFunction,kernel_size,rows,columns,channels);
+    blurframe <<<blocks,threadXblock>>>(device_frame,device_blurred_frame,device_gaussianFunction,kernel_size,rows,columns,channels);
 
     cudaDeviceSynchronize();
 
