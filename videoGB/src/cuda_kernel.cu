@@ -164,46 +164,69 @@ __global__ void blurVideoWithSharedMemory(unsigned char *video,unsigned char *bl
     
 }
 
-/**
- * GPU matrix for the Gaussian Blur filter applied on image.
- * @param image base image in bytes.
- * @param blurred_image the blurred image in bytes returned by the kernel.
- * @param gaussianMatrix the gaussian matrix in 1D format.
- * @param kernel_size the gaussian matrix kernel size.
- * @param height the image height.
- * @param width the image width.
- * @param channels the image channels.
-*/
-__global__ void blurImage(unsigned char *image,unsigned char *blurred_image,float *gaussianMatrix,int kernel_size, int imageRows, int imageColumns, int imageChannels){
-    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+#define BLOCK_WIDTH 32
+#define BLOCK_HEIGHT 32
 
-    float value = 0.0f;
-    int half_kernel_size = kernel_size/2;
-    int DIM = imageChannels*imageRows*imageColumns;
+__global__ void blurVideoWithSharedMemoryAndStreams(
+    unsigned char *video, unsigned char *blurred_video,
+    float *gaussianMatrix, int kernel_size, 
+    int frameRows, int frameColumns, int frameChannels,
+    int frameOffset)
+{
+    int half_kernel_size = kernel_size / 2;
 
-    if(idx>=DIM) return;
+    int tx = threadIdx.x;
+    int ty = threadIdx.y;
+
+    int col = blockIdx.x * BLOCK_WIDTH + tx;
+    int row = blockIdx.y * BLOCK_HEIGHT + ty;
+    int channel = blockIdx.z;
+
+    int shared_width = BLOCK_WIDTH + kernel_size;
+    int shared_height = BLOCK_HEIGHT + kernel_size;
+
+    extern __shared__ unsigned char sharedMem[];
 
 
-    float blurred_value = 0.0;
+    for (int m = -half_kernel_size; m <= half_kernel_size; m++) {
+        for (int n = -half_kernel_size; n <= half_kernel_size; n++) {
+            int shared_x = tx + n + half_kernel_size;
+            int shared_y = ty + m + half_kernel_size;
 
-    for(int m=-half_kernel_size; m<=half_kernel_size;m++){
-        for(int n=-half_kernel_size; n<=half_kernel_size;n++){
-            int toAddIdx = (m*imageColumns + n)*imageChannels;
-            if ( ! (idx+toAddIdx >= DIM || idx+toAddIdx < 0)){              
-                unsigned char value = image[idx+toAddIdx];
-                float gaussianValue = gaussianMatrix[(m+half_kernel_size)*kernel_size + (n+half_kernel_size)];
-                float valueXblur = value * gaussianValue;
-                blurred_value += valueXblur;
-            }
-                
+            int neighborRow = row + m;
+            int neighborColumn = col + n;
+
+            neighborRow = min(max(neighborRow, 0), frameRows - 1);
+            neighborColumn = min(max(neighborColumn, 0), frameColumns - 1);
+
+            int global_idx = ((neighborRow * frameColumns + neighborColumn) * frameChannels + channel) + frameOffset;
+
+            if (shared_x < shared_width && shared_y < shared_height)
+                sharedMem[shared_y * shared_width + shared_x] = video[global_idx];
         }
     }
-    
-    int intValue = (int)(blurred_value);
-    unsigned char unsignedCharValue = (unsigned char)intValue;
-    blurred_image[idx] = unsignedCharValue;
-    
+
+    __syncthreads();
+
+    if (row < frameRows && col < frameColumns) {
+        float blured_value = 0.0f;
+
+        for (int m = -half_kernel_size; m <= half_kernel_size; ++m) {
+            for (int n = -half_kernel_size; n <= half_kernel_size; ++n) {
+                int column = tx + n + half_kernel_size;
+                int row = ty + m + half_kernel_size;
+
+                unsigned char pixel = sharedMem[row * shared_width + column];
+                float gaussianValue = gaussianMatrix[(m + half_kernel_size) * kernel_size + (n + half_kernel_size)];
+                blured_value += pixel * gaussianValue;
+            }
+        }
+
+        int output_idx = ((row * frameColumns + col) * frameChannels + channel) + frameOffset;
+        blurred_video[output_idx] = static_cast<unsigned char>(blured_value);
+    }
 }
+
 
 void kernel(unsigned char *video, 
             unsigned char* blurred_video, 
@@ -453,6 +476,88 @@ void kernelUsingSharedMemory(unsigned char *video,
     cudaFree(device_video);
 
     cudaDeviceSynchronize();
+}
 
+
+void kernelUsingSharedMemoryAndStreams(unsigned char *video, 
+    unsigned char *blurred_video, 
+    float *gaussianMatrix, 
+    unsigned int DIM, 
+    int kernel_size, 
+    int rows, 
+    int columns, 
+    int channels, 
+    int frames,
+    int *totalTime)
+{
+
+    unsigned char *device_video, *device_blurred_video;
+    float *device_gaussianmatrix;
+
+    unsigned int size = DIM * sizeof(unsigned char);
+    int gaussianSize = kernel_size * kernel_size * sizeof(float);
+
+    std::chrono::high_resolution_clock::time_point startTransferTime, stopTransferTime;
+
+    startTransferTime = std::chrono::high_resolution_clock::now();
+
+    cudaMalloc((void **)&device_video,size);
+    cudaMalloc((void **)&device_blurred_video,size);
+
+    //GAUSSIAN matrix
+
+    cudaMalloc((void **)&device_gaussianmatrix,kernel_size * kernel_size * sizeof(float));
+    cudaMemcpy(device_gaussianmatrix,gaussianMatrix,kernel_size * kernel_size * sizeof(float),cudaMemcpyHostToDevice);
+
+    stopTransferTime = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds firstTransferTime = std::chrono::duration_cast<std::chrono::milliseconds>(stopTransferTime - startTransferTime);
+
+    int frameSize = rows * columns * channels;
+    int n_streams = frames;
+
+    std::vector<cudaStream_t> streams(n_streams);
+    for (int i = 0; i < n_streams; i++)
+        cudaStreamCreate(&streams[i]);
+
+    dim3 blockDim(BLOCK_WIDTH, BLOCK_HEIGHT);
+    dim3 gridDim((columns + BLOCK_WIDTH - 1) / BLOCK_WIDTH,
+                 (rows + BLOCK_HEIGHT - 1) / BLOCK_HEIGHT,
+                 channels);
+
+    size_t sharedMemorySize = (BLOCK_WIDTH + 2 * (kernel_size / 2)) *
+                           (BLOCK_HEIGHT + 2 * (kernel_size / 2)) * sizeof(unsigned char);
+
+    cudaEvent_t startComputationTime, stopComputationTime;
+    cudaEventCreate(&startComputationTime);
+    cudaEventCreate(&stopComputationTime);
+    cudaEventRecord(startComputationTime);
+
+    for (int i = 0; i < n_streams; i++) {
+        int offset = i * frameSize;
+
+        cudaMemcpyAsync(device_video + offset, video + offset, frameSize * sizeof(unsigned char), cudaMemcpyHostToDevice, streams[i]);
+
+        blurVideoWithSharedMemoryAndStreams<<<gridDim, blockDim, sharedMemorySize, streams[i]>>>(
+            device_video, device_blurred_video, device_gaussianmatrix, kernel_size, rows, columns, channels, offset);
+
+        cudaMemcpyAsync(blurred_video + offset, device_blurred_video + offset, frameSize * sizeof(unsigned char), cudaMemcpyDeviceToHost, streams[i]);
+    }
+
+    cudaEventRecord(stopComputationTime);
+    for (int i = 0; i < n_streams; i++)
+        cudaStreamSynchronize(streams[i]);
+    cudaEventSynchronize(stopComputationTime);
+
+    float elapsedTime;
+    cudaEventElapsedTime(&elapsedTime, startComputationTime, stopComputationTime);
+
+    for (int i = 0; i < n_streams; i++)
+        cudaStreamDestroy(streams[i]);
+
+    *totalTime = static_cast<int>(elapsedTime + firstTransferTime.count());
+
+    cudaFree(device_video);
+    cudaFree(device_blurred_video);
+    cudaFree(device_gaussianmatrix);
 
 }

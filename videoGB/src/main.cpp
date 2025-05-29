@@ -4,7 +4,7 @@
 #include "../header/gaussian_blur.h"
 
 
-enum Mode {BASIC,STREAMS,SHARED_MEMORY};
+enum Mode {BASIC,STREAMS,SHARED_MEMORY,SHARED_STREAMS};
 
 int BlurVideo(std::string src,std::string dest, Mode mode);
 
@@ -106,6 +106,19 @@ int BlurVideo(std::string src,std::string dest, Mode mode){
             break;
         }
         
+    case Mode::SHARED_STREAMS:
+        {
+            int totalTimeWithStreams = -1;
+            blurredVideo = GB.blurVideoGPUusingSharedMemoryAndStreams(video,&totalTimeWithStreams);
+            if(totalTimeWithStreams!=-1){
+                printf("GPU total time using streams and shared memory: %d milliseconds\n",totalTimeWithStreams);
+            }
+            else{
+                printf("Something went wrong with video blur using shared memory and streams\n");
+                return -1;
+            }
+            break;
+        }
     }
     printf("-------------------\n");
 
@@ -131,6 +144,8 @@ int BlurVideo(std::string src,std::string dest, Mode mode){
     // Release resources
     cap.release();
     cv::destroyAllWindows();
+
+    blurredVideo = Video(0,0,0,0,std::vector<unsigned char *>());
 
     return 0;
 
