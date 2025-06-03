@@ -55,6 +55,12 @@ class GaussianBlur{
         */
         Video blurVideoGPUusingSharedMemory(Video video, int* dataTransferTime,int* computationTime);
 
+        /**
+         * Blur the video using the GPU cudaStreams combined with shared memory.
+         * @param video A Video object.
+         * @param totalTime Pointer to the data transfer time plus computation time CPU-GPU and viceversa.
+        */
+        Video blurVideoGPUusingSharedMemoryAndStreams(Video video, int* totalTime);
 
 
 };

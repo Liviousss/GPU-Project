@@ -109,3 +109,25 @@ Video GaussianBlur::blurVideoGPUusingSharedMemory(Video video, int *dataTransfer
     Video blurredVideo = Video(video.getWidth(), video.getHeight(), video.getChannels(), video.getFrames(), blurredVideoData);
     return blurredVideo;
 }
+
+Video GaussianBlur::blurVideoGPUusingSharedMemoryAndStreams(Video video, int *totalTime){
+    int DIM = video.getDataLenght();
+    
+    unsigned char *blurredVideoData = (unsigned char *)malloc(video.getDataLenght() * sizeof(unsigned char));
+    
+    kernelUsingSharedMemoryAndStreams(video.getData(),
+            blurredVideoData,
+            this->gaussianMatrix,
+            video.getDataLenght(),
+            this->kernel_size,
+            video.getHeight(),
+            video.getWidth(),
+            video.getChannels(),
+            video.getFrames(),
+            totalTime);
+    
+    cudaDeviceSynchronize();
+    
+    Video blurredVideo = Video(video.getWidth(), video.getHeight(), video.getChannels(), video.getFrames(), blurredVideoData);
+    return blurredVideo;
+}
