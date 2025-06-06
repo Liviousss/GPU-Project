@@ -1,5 +1,4 @@
 #include <opencv2/opencv.hpp>
-#include <opencv2/core/utils/logger.hpp>
 #include <iostream>
 #include "../header/gaussian_blur.h"
 
